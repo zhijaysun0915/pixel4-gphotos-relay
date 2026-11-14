@@ -549,14 +549,14 @@
             <div class="storage-bar-group">
               <div class="storage-header">
                 <div class="storage-title">外接硬碟空間釋放 (Mac 本機 / 外接硬碟)</div>
-                <div class="storage-detail" id="driveDetail">可用 419 GB / 總量 954 GB</div>
+                <div class="storage-detail" id="driveDetail">可用 -- / 總量 --</div>
               </div>
               <div class="segmented-bar">
                 <div class="bar-seg seg-apps" id="segDriveUsed" style="width: 57%;"></div>
                 <div class="bar-seg seg-free" id="segDriveFree" style="width: 43%;"></div>
               </div>
               <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">
-                <span>已釋放空間: <strong id="driveFreedText" style="color:var(--success);">+408 GB</strong></span>
+                <span>已釋放空間: <strong id="driveFreedText" style="color:var(--success);">--</strong></span>
                 <span>剩餘佔用率: <strong id="driveUsageText">57%</strong></span>
               </div>
             </div>
@@ -572,7 +572,7 @@
               <div class="action-tile" onclick="navTab('sharing')">
                 <div class="action-tile-icon">🤝</div>
                 <div class="action-tile-title">共享相簿轉移</div>
-                <div class="action-tile-desc">將 secondary-account 免下載直接轉存至 primary-account</div>
+                <div class="action-tile-desc">將 次要帳號 免下載直接轉存至 主要帳號</div>
               </div>
 
               <div class="action-tile" onclick="navTab('albums')">
@@ -595,18 +595,18 @@
         <div class="metric-row">
           <div class="metric-card">
             <div class="metric-card-label">外接硬碟騰出進度</div>
-            <div class="metric-card-val" id="metricFreed" style="color:var(--success);">+408 GB</div>
+            <div class="metric-card-val" id="metricFreed" style="color:var(--success);">--</div>
             <div class="metric-card-foot">容量佔用從 99% 大幅降至 57%</div>
           </div>
           <div class="metric-card">
             <div class="metric-card-label">全案遷移總完成率</div>
-            <div class="metric-card-val" id="metricPercent">44.7%</div>
-            <div class="metric-card-foot" id="metricFilesText">已處理 143,000+ / 320,066 檔案</div>
+            <div class="metric-card-val" id="metricPercent">--</div>
+            <div class="metric-card-foot" id="metricFilesText">已處理 -- / -- 檔案</div>
           </div>
           <div class="metric-card">
             <div class="metric-card-label">Pixel 手機上傳佇列</div>
             <div class="metric-card-val" id="metricPixelQueue" style="color:var(--primary);">備份中</div>
-            <div class="metric-card-foot" id="metricPixelFree">可用 77 GB • 雙緩衝高速推入</div>
+            <div class="metric-card-foot" id="metricPixelFree">可用 -- • 雙緩衝高速推入</div>
           </div>
           <div class="metric-card">
             <div class="metric-card-label">中繼通道狀態</div>
@@ -750,7 +750,7 @@
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
             <div>
-              <h3 style="font-size:1.1rem; font-weight:700;">Google 相簿管理 (secondary-account / primary-account)</h3>
+              <h3 style="font-size:1.1rem; font-weight:700;">Google 相簿管理 (多帳號與合作夥伴共用)</h3>
               <p style="font-size:0.8rem; color:var(--text-muted);">查看線上相簿清單、建立新相簿、相片歸類</p>
             </div>
             <button class="btn btn-primary" onclick="createAlbumPrompt()">➕ 建立新相簿</button>

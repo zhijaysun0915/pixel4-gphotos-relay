@@ -458,6 +458,7 @@
       cursor: pointer;
       border: 1px solid transparent;
       margin-bottom: 0.25rem;
+    }
     /* Storage Matrix Grid & Cards */
     .matrix-section {
       background: var(--surface);
@@ -1232,7 +1233,7 @@
               <span class="matrix-badge matrix-badge-danger">空間已滿 ⚠️</span>
             </div>
             <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.4;">
-              企業雲端帳號 <strong>your-work@example.com</strong> 已達上限，包含 408+ 份重要交接與專案文件 (1.2+ GB)。已就緒一鍵備份至外接硬碟並同步至 <code>your-primary@gmail.com</code> Google Drive！
+              將企業雲端或指定雲端資料夾備份至本機／外接硬碟，並同步至設定的 Google Drive 帳號。
             </p>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.85rem; margin-bottom:1rem; font-size:0.8rem;">
               <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
@@ -1261,7 +1262,7 @@
               <span class="matrix-badge matrix-badge-success">本機已就緒</span>
             </div>
             <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.4;">
-              MacBook CloudDocs 目錄同步完成，包含 338 份重要個人證件、合約、財產清單、報稅資料與音檔 (49 MB)。安全備份至外接硬碟與 <code>your-primary@gmail.com</code> Google Drive！
+              將本機重要文件或 iCloud / CloudDocs 目錄備份至外接硬碟與設定的 Google Drive 帳號。
             </p>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.85rem; margin-bottom:1rem; font-size:0.8rem;">
               <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
@@ -1281,16 +1282,16 @@
             </div>
           </div>
 
-          <!-- Hub 3: primary-account Google Photos 32 Large Files 0-Byte Reset -->
+          <!-- Hub 3: Google Photos Large Files 0-Byte Reset -->
           <div class="card" style="border-left: 4px solid var(--primary);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
               <h3 style="font-size:1.05rem; font-weight:700; display:flex; align-items:center; gap:0.5rem;">
-                <span>🎯</span> primary-account 相簿空間歸零 (0 Byte)
+                <span>🎯</span> Google 相簿大檔空間歸零 (0 Byte)
               </h3>
-              <span class="matrix-badge matrix-badge-warning">鎖定 32 個大檔 (77 GB)</span>
+              <span class="matrix-badge matrix-badge-warning">大檔壓縮洗白策略</span>
             </div>
             <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.4;">
-              已診斷分析出：<code>your-primary@gmail.com</code> 相簿所佔的 77 GB+ 空間，全是由 Google 相簿中 <strong>32 個超大影片/照片</strong> 造成的！無需下載整個 TB 庫，只需對這 32 個大檔進行「洗白」：
+              若 Google 相簿佔用空間過高，通常是少數佔空間的原始畫質大型影片／照片所致。無需下載整個圖庫，只需針對大型檔案進行「洗白」：
             </p>
             <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:0.85rem; margin-bottom:1rem; font-size:0.8rem; color:#0369a1;">
               <ol style="margin-left:1.25rem; display:flex; flex-direction:column; gap:0.35rem;">
@@ -1445,7 +1446,7 @@
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
             <div>
-              <h3 style="font-size:1.1rem; font-weight:700;">Google 相簿管理 (secondary-account / primary-account)</h3>
+              <h3 style="font-size:1.1rem; font-weight:700;">Google 相簿管理 (多帳號與合作夥伴共用)</h3>
               <p style="font-size:0.8rem; color:var(--text-muted);">查看線上相簿清單、建立新相簿、相片歸類</p>
             </div>
             <button class="btn btn-primary" onclick="createAlbumPrompt()">➕ 建立新相簿</button>
@@ -1840,15 +1841,15 @@
             }
 
             const totalEl = document.getElementById('nasTotalFiles');
-            if (totalEl) totalEl.innerText = `${(ns.total_nas_files || 327635).toLocaleString()} 檔`;
+            if (totalEl) totalEl.innerText = ns.total_nas_files ? `${ns.total_nas_files.toLocaleString()} 檔` : `--`;
 
             const upEl = document.getElementById('nasUploadedFiles');
-            if (upEl) upEl.innerText = `${(ns.uploaded_to_gphotos || 0).toLocaleString()} 檔`;
+            if (upEl) upEl.innerText = ns.uploaded_to_gphotos ? `${ns.uploaded_to_gphotos.toLocaleString()} 檔` : `--`;
 
             const upPctEl = document.getElementById('nasUploadPercent');
             const progRatioEl = document.getElementById('nasProgressRatio');
             const progBarEl = document.getElementById('nasProgressBar');
-            const total = ns.total_nas_files || 327635;
+            const total = ns.total_nas_files || 0;
             const up = ns.uploaded_to_gphotos || 0;
             const pct = total > 0 ? ((up / total) * 100).toFixed(2) : '0.00';
             if (upPctEl) upPctEl.innerText = `${pct}% 同步率`;
@@ -1916,15 +1917,13 @@
       const totalUsedTB = (totalUsed / 1024).toFixed(2);
       const totalAvailTB = (totalAvail / 1024).toFixed(2);
 
-      // Macro breakdown items
-      const macroBreakdown = [
-        { label: 'Google 5TB (primary-account)', gb: list.find(x => x.id === 'gdrive_main')?.used_gb || 254.7, color: '#0284c7' },
-        { label: 'Google Drive (Secondary)', gb: list.find(x => x.id === 'gdrive_sub')?.used_gb || 1463.3, color: '#818cf8' },
-        { label: '外接硬碟 (ORICO)', gb: list.find(x => x.id === 'macmini_ext')?.used_gb || 50.0, color: '#10b981' },
-        { label: 'Mac mini 內接', gb: list.find(x => x.id === 'macmini_int')?.used_gb || 155.0, color: '#64748b' },
-        { label: 'OneDrive (滿載)', gb: list.find(x => x.id === 'onedrive')?.used_gb || 5.0, color: '#ef4444' },
-        { label: '行動端 & iCloud', gb: 130.0, color: '#f59e0b' }
-      ];
+      // Macro breakdown items dynamically derived from storage_matrix list
+      const palette = ['#0284c7', '#818cf8', '#10b981', '#64748b', '#f59e0b', '#ef4444'];
+      const macroBreakdown = list.map((item, idx) => ({
+        label: item.name,
+        gb: Number(item.used_gb) || 0,
+        color: palette[idx % palette.length]
+      }));
 
       const macroSegmentsHtml = macroBreakdown.map(b => {
         const w = Math.max(0.5, ((b.gb / totalCap) * 100)).toFixed(2);
