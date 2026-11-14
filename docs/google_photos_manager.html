@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google 相簿 & 多來源數據管家 (Windows / Mac) | Pixel 4 / Pixel 5 無限中繼站</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sidebar-width: 260px;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-light: #e0f2fe;
+      --primary-hover: #0369a1;
+      --accent-teal: #0d9488;
+      --accent-purple: #7c3aed;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --success: #10b981;
+      --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* Left Sidebar */
+    aside {
+      width: var(--sidebar-width);
+      background: var(--surface);
+      border-right: 1px solid var(--surface-border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; bottom: 0; left: 0;
+      z-index: 40;
+    }
+
+    .brand-box {
+      padding: 1.5rem 1.25rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--surface-border);
+    }
+    .brand-logo {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0284c7, #0d9488);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+    .brand-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--text-main);
+    }
+    .brand-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .nav-menu {
+      padding: 1rem 0.75rem;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: all 0.2s ease;
+      text-align: left;
+      width: 100%;
+    }
+    .nav-item:hover {
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .nav-item .icon { font-size: 1.1rem; }
+
+    .sidebar-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--surface-border);
+      background: #fafafa;
+    }
+    .relay-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--accent-teal);
+      font-weight: 600;
+    }
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Main Container */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    header {
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--surface-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .device-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.8rem;
+      background: #f1f5f9;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-main);
+      border: 1px solid var(--surface-border);
+    }
+
+    .content-area {
+      padding: 2rem;
+      flex: 1;
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Device Mockup & Stage */
+    .device-stage {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .phone-mockup-wrap {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 1.75rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: var(--card-shadow);
+    }
+    .phone-frame {
+      width: 140px;
+      height: 250px;
+      border: 6px solid #334155;
+      border-radius: 28px;
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.2);
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+    .phone-frame::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      width: 36px;
+      height: 4px;
+      background: #475569;
+      border-radius: 2px;
+    }
+    .phone-screen-info {
+      color: white;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+    .phone-meta {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .phone-meta-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      border-bottom: 1px dashed var(--surface-border);
+      padding-bottom: 0.35rem;
+    }
+
+    /* Quick Actions Panel */
+    .quick-actions-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .storage-bar-group {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--card-shadow);
+    }
+    .storage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+    .storage-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .storage-detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .segmented-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      display: flex;
+      overflow: hidden;
+    }
+    .bar-seg { height: 100%; transition: width 0.4s ease; }
+    .seg-apps { background: #3b82f6; }
+    .seg-free { background: #10b981; }
+
+    .action-tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+    }
+    .action-tile {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      box-shadow: var(--card-shadow);
+    }
+    .action-tile:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.1);
+    }
+    .action-tile-icon { font-size: 1.8rem; margin-bottom: 0.6rem; }
+    .action-tile-title { font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.3rem; }
+    .action-tile-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
+    .tag-hot {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* Metric grids */
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      box-shadow: var(--card-shadow);
+    }
+    .metric-card-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem; }
+    .metric-card-val { font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
+    .metric-card-foot { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--surface-border); text-align: left; }
+    th { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; background: #fafafa; }
+    tr:hover td { background: #f8fafc; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .badge-success { background: #dcfce7; color: #15803d; }
+    .badge-primary { background: #e0f2fe; color: #0369a1; }
+    .badge-warning { background: #fef3c7; color: #b45309; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: white; border: 1px solid var(--surface-border); color: var(--text-main); }
+    .btn-outline:hover { background: #f1f5f9; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+
+    .console-term {
+      background: #090d16;
+      border-radius: 12px;
+      padding: 1.25rem;
+      color: #38bdf8;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      height: 420px;
+      overflow-y: auto;
+    }
+
+    /* Modal Overlay & Card */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-card {
+      background: #ffffff;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 680px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: #f8fafc;
+    }
+
+    .folder-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin-bottom: 0.25rem;
+      transition: all 0.15s;
+    }
+    .folder-item:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <aside>
+    <div class="brand-box">
+      <div class="brand-logo">📸</div>
+      <div>
+        <div class="brand-name">Google 相簿數據管家</div>
+        <div class="brand-subtitle">iOS • Android • NAS • 外接硬碟</div>
+      </div>
+    </div>
+
+    <div class="nav-menu">
+      <button class="nav-item active" onclick="navTab('home')">
+        <span class="icon">🏠</span> 首頁總覽 (Home)
+      </button>
+      <button class="nav-item" onclick="navTab('sources')">
+        <span class="icon">📁</span> 多來源管理 (Sources)
+      </button>
+      <button class="nav-item" onclick="navTab('rclone')">
+        <span class="icon">☁️</span> 雲端與 rclone (Cloud)
+      </button>
+      <button class="nav-item" onclick="navTab('albums')">
+        <span class="icon">🖼️</span> Google 相簿管理 (Albums)
+      </button>
+      <button class="nav-item" onclick="navTab('sharing')">
+        <span class="icon">🤝</span> 共享相簿轉移 (Partner)
+      </button>
+      <button class="nav-item" onclick="navTab('tools')">
+        <span class="icon">🛠️</span> 實用工具箱 (Tools)
+      </button>
+      <button class="nav-item" onclick="navTab('logs')">
+        <span class="icon">📜</span> 即時終端日誌 (Logs)
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="relay-badge">
+        <span class="live-dot"></span>
+        <span id="sidebarStatusText">Pixel 無限中繼站工作中</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View -->
+  <div class="app-main">
+    <header>
+      <div class="header-title" id="pageTitle">
+        <span>🏠</span> 設備與數據總覽
+      </div>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <span class="device-pill" id="headerDevicePill">📱 Google Pixel 5 / Pixel 4 (USB ADB)</span>
+        <button class="btn btn-outline" style="padding:0.4rem 0.8rem;" onclick="refreshAll()">🔄 重新整理</button>
+      </div>
+    </header>
+
+    <div class="content-area">
+
+      <!-- TAB 1: HOME (UltFone Style Stage) -->
+      <div id="tab-home" class="tab-view active">
+        <div class="device-stage">
+          <!-- Left Phone Graphic -->
+          <div class="phone-mockup-wrap">
+            <div class="phone-frame">
+              <div style="font-size:2rem; margin-bottom:0.5rem;">📱</div>
+              <div class="phone-screen-info">
+                <strong id="mockupModelName">Pixel 5 / 4</strong><br>
+                <small style="color:#94a3b8;">Unlimited Storage Bypass</small>
+              </div>
+            </div>
+            <div class="phone-meta">
+              <div class="phone-meta-row"><span>中繼特權:</span><strong style="color:var(--success);">0-Byte 永久無限空間</strong></div>
+              <div class="phone-meta-row"><span>目標帳號:</span><strong>your-primary@gmail.com</strong></div>
+              <div class="phone-meta-row"><span>API 配額限制:</span><span style="color:#0284c7;">完全豁免 (無 1 萬檔/天上限)</span></div>
+              <div class="phone-meta-row"><span>螢幕狀態:</span><span>低溫低耗電保持喚醒</span></div>
+            </div>
+          </div>
+
+          <!-- Right Action Tiles -->
+          <div class="quick-actions-panel">
+            <div class="storage-bar-group">
+              <div class="storage-header">
+                <div class="storage-title">外接硬碟空間釋放 (Mac 本機 / 外接硬碟)</div>
+                <div class="storage-detail" id="driveDetail">可用 419 GB / 總量 954 GB</div>
+              </div>
+              <div class="segmented-bar">
+                <div class="bar-seg seg-apps" id="segDriveUsed" style="width: 57%;"></div>
+                <div class="bar-seg seg-free" id="segDriveFree" style="width: 43%;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">
+                <span>已釋放空間: <strong id="driveFreedText" style="color:var(--success);">+408 GB</strong></span>
+                <span>剩餘佔用率: <strong id="driveUsageText">57%</strong></span>
+              </div>
+            </div>
+
+            <div class="action-tiles-grid">
+              <div class="action-tile" onclick="navTab('sources')">
+                <span class="tag-hot">熱門</span>
+                <div class="action-tile-icon">⚡</div>
+                <div class="action-tile-title">多來源中繼遷移</div>
+                <div class="action-tile-desc">選擇 HDD / NAS / iPhone 透過 Pixel 4/5 邊推邊刪無限備份</div>
+              </div>
+
+              <div class="action-tile" onclick="navTab('sharing')">
+                <div class="action-tile-icon">🤝</div>
+                <div class="action-tile-title">共享相簿轉移</div>
+                <div class="action-tile-desc">將 secondary-account 免下載直接轉存至 primary-account</div>
+              </div>
+
+              <div class="action-tile" onclick="navTab('albums')">
+                <div class="action-tile-icon">🖼️</div>
+                <div class="action-tile-title">Google 相簿管理</div>
+                <div class="action-tile-desc">線上檢視相簿清單、即時建立相簿與相片整理</div>
+              </div>
+
+              <div class="action-tile" onclick="navTab('tools')">
+                <span class="tag-hot">清理</span>
+                <div class="action-tile-icon">🧹</div>
+                <div class="action-tile-title">無效檔案清理器</div>
+                <div class="action-tile-desc">一鍵掃除 .json、.thm、.aae、.DS_Store 等附屬垃圾檔</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metric-row">
+          <div class="metric-card">
+            <div class="metric-card-label">外接硬碟騰出進度</div>
+            <div class="metric-card-val" id="metricFreed" style="color:var(--success);">+408 GB</div>
+            <div class="metric-card-foot">容量佔用從 99% 大幅降至 57%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">全案遷移總完成率</div>
+            <div class="metric-card-val" id="metricPercent">44.7%</div>
+            <div class="metric-card-foot" id="metricFilesText">已處理 143,000+ / 320,066 檔案</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Pixel 手機上傳佇列</div>
+            <div class="metric-card-val" id="metricPixelQueue" style="color:var(--primary);">備份中</div>
+            <div class="metric-card-foot" id="metricPixelFree">可用 77 GB • 雙緩衝高速推入</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">中繼通道狀態</div>
+            <div class="metric-card-val" id="metricRelayStatus" style="font-size:1.3rem; color:var(--success);">持續運轉中</div>
+            <div class="metric-card-foot">0 扣額 • Google 帳號永久免付費</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SOURCES (HDD, SD, NAS, iPhone, Android) -->
+      <div id="tab-sources" class="tab-view">
+
+        <!-- Quick Presets -->
+        <div class="card" style="margin-bottom:1.25rem;">
+          <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:0.75rem;">⚡ 常用多來源照片庫快速發射</h3>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+            
+            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:1rem; background:#f8fafc;">
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                <span style="font-size:1.4rem;">🌐</span>
+                <strong style="font-size:0.9rem;">Synology NAS (Photos)</strong>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; word-break:break-all;">
+                <code>/Volumes/NAS/Photos</code>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-outline" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openDrillModal('/Volumes/NAS/Photos')">📁 瀏覽內容</button>
+                <button class="btn btn-primary" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openLaunchModal('/Volumes/NAS/Photos')">🚀 啟動中繼</button>
+              </div>
+            </div>
+
+            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:1rem; background:#f8fafc;">
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                <span style="font-size:1.4rem;">🌐</span>
+                <strong style="font-size:0.9rem;">Synology NAS (GoogleDrive 同步)</strong>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; word-break:break-all;">
+                <code>~/GoogleDrive_Relay</code>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-outline" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openDrillModal('~/GoogleDrive_Relay')">📁 瀏覽內容</button>
+                <button class="btn btn-primary" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openLaunchModal('~/GoogleDrive_Relay')">🚀 啟動中繼</button>
+              </div>
+            </div>
+
+            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:1rem; background:#f8fafc;">
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                <span style="font-size:1.4rem;">💽</span>
+                <strong style="font-size:0.9rem;">Mac 本機 / 外接硬碟 外接硬碟</strong>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; word-break:break-all;">
+                <code>~/Pictures/ToGooglePhotos</code>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-outline" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openDrillModal('~/Pictures/ToGooglePhotos')">📁 瀏覽內容</button>
+                <button class="btn btn-primary" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openLaunchModal('~/Pictures/ToGooglePhotos')">🚀 啟動中繼</button>
+              </div>
+            </div>
+
+            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:1rem; background:#f8fafc;">
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                <span style="font-size:1.4rem;">🍏</span>
+                <strong style="font-size:0.9rem;">Apple iPhone 備份目錄</strong>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; word-break:break-all;">
+                <code>~/Pictures/iPhone_Import</code>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-outline" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openDrillModal('~/Pictures/iPhone_Import')">📁 瀏覽內容</button>
+                <button class="btn btn-primary" style="padding:0.35rem 0.6rem; font-size:0.75rem;" onclick="openLaunchModal('~/Pictures/iPhone_Import')">🚀 啟動中繼</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- All Devices Table -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <div>
+              <h3 style="font-size:1.1rem; font-weight:700;">已偵測儲存媒介與設備</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted);">支援外接硬碟、SD 卡、Synology NAS (SMB/NFS) 及 Pixel / iPhone 手機</p>
+            </div>
+            <button class="btn btn-outline" onclick="openLaunchModal('')">➕ 自訂來源路徑中繼</button>
+          </div>
+          <table id="deviceTable">
+            <thead>
+              <tr>
+                <th>類型</th>
+                <th>名稱</th>
+                <th>路徑 / 設備細節</th>
+                <th>容量 / 狀態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="deviceTableBody">
+              <!-- Dynamic devices -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Active Tasks Table -->
+        <div class="card" id="activeTasksCard">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <h3 style="font-size:1rem; font-weight:700;">🔄 執行中的中繼進程 (Active Tasks)</h3>
+            <button class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="loadActiveTasks()">🔄 重新整理</button>
+          </div>
+          <div id="activeTasksList" style="font-size:0.85rem; color:var(--text-muted);">載入中...</div>
+        </div>
+
+      </div>
+
+      <!-- TAB 3: RCLONE & CLOUD AUTOMATION -->
+      <div id="tab-rclone" class="tab-view">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <div>
+              <h3 style="font-size:1.1rem; font-weight:700;">rclone 雲端通道與排程自動化</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted);">管理已配置的雲端遠端（Google Drive、Google Photos 等）</p>
+            </div>
+            <button class="btn btn-outline" onclick="loadRcloneRemotes()">🔄 重新讀取 Remotes</button>
+          </div>
+          <table id="rcloneTable">
+            <thead>
+              <tr>
+                <th>Remote 名稱</th>
+                <th>服務類型</th>
+                <th>關聯帳號</th>
+                <th>快速指令</th>
+              </tr>
+            </thead>
+            <tbody id="rcloneTableBody">
+              <!-- Dynamic remotes -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: GOOGLE PHOTOS ALBUMS -->
+      <div id="tab-albums" class="tab-view">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <div>
+              <h3 style="font-size:1.1rem; font-weight:700;">Google 相簿管理 (secondary-account / primary-account)</h3>
+              <p style="font-size:0.8rem; color:var(--text-muted);">查看線上相簿清單、建立新相簿、相片歸類</p>
+            </div>
+            <button class="btn btn-primary" onclick="createAlbumPrompt()">➕ 建立新相簿</button>
+          </div>
+          <div id="albumsLoading" style="color:var(--text-muted); font-size:0.85rem;">載入相簿中...</div>
+          <div id="albumsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:1rem; margin-top:1rem;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 5: PARTNER SHARING -->
+      <div id="tab-sharing" class="tab-view">
+        <div class="card">
+          <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:0.5rem;">🤝 透過「共享相簿 / 合作夥伴共用」無縫轉移指南</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.6; margin-bottom:1.5rem;">
+            不想把幾百 GB 的照片先下載到電腦？Google 相簿內建的「合作夥伴共用 (Partner Sharing)」可以直接在雲端將 <code>your-secondary@gmail.com</code> 的所有照片 100% 同步給 <code>your-primary@gmail.com</code>！
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; background:#f8fafc;">
+              <h4 style="color:#0284c7; margin-bottom:0.5rem;">方法 A：合作夥伴共用 (Partner Sharing)</h4>
+              <ol style="font-size:0.85rem; line-height:1.8; margin-left:1.2rem; color:#334155;">
+                <li>登入 <code>your-secondary@gmail.com</code> 的 Google 相簿。</li>
+                <li>前往「設定」➔「合作夥伴共用」➔ 輸入 <code>your-primary@gmail.com</code>。</li>
+                <li>選擇「所有相片」並傳送邀請。</li>
+                <li>登入 <code>your-primary@gmail.com</code> 接受邀請，並開啟<strong>「自動儲存：所有相片」</strong>。</li>
+                <li>雲端會自動將每張照片存入 <code>your-primary@gmail.com</code> 的相簿中！</li>
+              </ol>
+            </div>
+
+            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:1.25rem; background:#f8fafc;">
+              <h4 style="color:#0d9488; margin-bottom:0.5rem;">💡 策略比較：Pixel 中繼 vs 合作夥伴共用</h4>
+              <table style="font-size:0.8rem;">
+                <tr>
+                  <th>比較項目</th>
+                  <th>Pixel 4 / 5 實體中繼</th>
+                  <th>合作夥伴共用</th>
+                </tr>
+                <tr>
+                  <td><strong>空間計費</strong></td>
+                  <td><span class="badge badge-success">永久 0 GB (無限免費)</span></td>
+                  <td>原帳號若刪除，新帳號會開始計入空間</td>
+                </tr>
+                <tr>
+                  <td><strong>耗費頻寬</strong></td>
+                  <td>需透過手機上傳</td>
+                  <td>純雲端直接轉存 (免下載)</td>
+                </tr>
+                <tr>
+                  <td><strong>建議用途</strong></td>
+                  <td><strong>外接硬碟 / NAS / iPhone 首選</strong></td>
+                  <td><strong>雲端既有照片快速過戶</strong></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <a href="https://photos.google.com/partner-sharing" target="_blank" class="btn btn-primary">🔗 點此直接前往 Google 相簿合作夥伴設定頁面</a>
+        </div>
+      </div>
+
+      <!-- TAB 6: TOOLS -->
+      <div id="tab-tools" class="tab-view">
+        <div class="card">
+          <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">🛠️ 實用工具箱</h3>
+          <div class="action-tiles-grid">
+            <div class="action-tile" onclick="cleanJunkPrompt()">
+              <div class="action-tile-icon">🧹</div>
+              <div class="action-tile-title">批次清除無效附屬檔</div>
+              <div class="action-tile-desc">一鍵掃除指定資料夾中的 .json、.DS_Store、Thumbs.db、.thm 等無用檔案</div>
+            </div>
+
+            <div class="action-tile" onclick="alert('HEIC 轉檔引擎就緒：外接硬碟或 iPhone 中的 HEIC 在透過 Pixel 上傳時，Google 相簿會自動相容解析並雲端無損存取！')">
+              <div class="action-tile-icon">🔄</div>
+              <div class="action-tile-title">HEIC 轉 JPG 快速工具</div>
+              <div class="action-tile-desc">Apple 專屬高效率相片格式自動轉換相容</div>
+            </div>
+
+            <div class="action-tile" onclick="controlRelay('restart')">
+              <div class="action-tile-icon">⚡</div>
+              <div class="action-tile-title">重啟 Pixel 5 中繼服務</div>
+              <div class="action-tile-desc">強制重啟背景中繼進程，重新建立 ADB 通道</div>
+            </div>
+
+            <div class="action-tile" onclick="controlRelay('stop')">
+              <div class="action-tile-icon">⏸️</div>
+              <div class="action-tile-title">暫停 Pixel 5 中繼服務</div>
+              <div class="action-tile-desc">暫時停止中繼腳本，保留手機目前進度</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 7: LOGS -->
+      <div id="tab-logs" class="tab-view">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <h3 style="font-size:1rem; font-weight:700;">即時終端通訊日誌 (~/pixel5_auto_relay.log)</h3>
+            <span style="font-size:0.75rem; color:var(--text-muted);">每 3 秒自動同步</span>
+          </div>
+          <div class="console-term" id="consoleLogs">載入中...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 1: Interactive Directory Drill-Down Explorer -->
+  <div class="modal-overlay" id="drillModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 style="font-weight:700; font-size:1.05rem;" id="drillModalTitle">📁 目錄導覽器</h4>
+        <button class="btn btn-outline" style="padding:0.2rem 0.5rem;" onclick="closeDrillModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; font-size:0.8rem; background:#f1f5f9; padding:0.5rem 0.75rem; border-radius:8px;">
+          <span style="font-weight:700;">當前路徑:</span>
+          <span id="drillCurrentPath" style="font-family:var(--font-mono); word-break:break-all;"></span>
+        </div>
+        <div id="drillBackBtn" style="margin-bottom:0.75rem; display:none;">
+          <button class="btn btn-outline" style="font-size:0.75rem; padding:0.3rem 0.6rem;" onclick="drillGoParent()">⬆️ 返回上一層</button>
+        </div>
+        <div id="drillItemsList" style="max-height:360px; overflow-y:auto;">
+          載入中...
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeDrillModal()">取消</button>
+        <button class="btn btn-primary" onclick="drillSelectCurrentAsRelay()">🚀 以此目錄啟動 Pixel 中繼</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Launch Relay Task Dialog -->
+  <div class="modal-overlay" id="launchModal">
+    <div class="modal-card" style="max-width:540px;">
+      <div class="modal-header">
+        <h4 style="font-weight:700; font-size:1.05rem;">🚀 啟動多來源至 Pixel 中繼遷移</h4>
+        <button class="btn btn-outline" style="padding:0.2rem 0.5rem;" onclick="closeLaunchModal()">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:1.25rem;">
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.4rem;">來源路徑 (HDD / NAS / iPhone / 資料夾):</label>
+          <input type="text" id="launchSourceInput" style="width:100%; padding:0.65rem 0.75rem; border-radius:8px; border:1px solid #cbd5e1; font-family:var(--font-mono); font-size:0.85rem;" placeholder="/Volumes/NAS/Photos">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.4rem;">中繼設備 (Pixel 4 / Pixel 5):</label>
+          <select id="launchDeviceSelect" style="width:100%; padding:0.65rem 0.75rem; border-radius:8px; border:1px solid #cbd5e1; font-size:0.85rem;">
+            <option value="auto">📱 自動偵測首台 Pixel (推薦)</option>
+            <option value="09211FDD4003MN">📱 Google Pixel 5 (09211FDD4003MN)</option>
+            <option value="flame">📱 Google Pixel 4</option>
+            <option value="coral">📱 Google Pixel 4 XL</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.4rem;">批次大小 (Batch Size):</label>
+          <select id="launchBatchSelect" style="width:100%; padding:0.65rem 0.75rem; border-radius:8px; border:1px solid #cbd5e1; font-size:0.85rem;">
+            <option value="15">15 GB (平穩穩定 • 適用各機型)</option>
+            <option value="30" selected>30 GB (高速衝刺 • 適用 64GB+ 機型)</option>
+            <option value="50">50 GB (極限吞吐量 • Pixel 5 推薦)</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.4rem;">遷移策略:</label>
+          <div style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.85rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+              <input type="radio" name="launchStrategy" value="move" checked>
+              <span><strong>邊推邊刪 (推入手機驗證後刪除來源檔以騰出空間)</strong></span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+              <input type="radio" name="launchStrategy" value="copy">
+              <span><strong>僅複製保留 (複製到手機上傳，來源硬碟/NAS 原始檔完全保留)</strong></span>
+            </label>
+          </div>
+        </div>
+
+        <div style="background:#e0f2fe; border:1px solid #bae6fd; border-radius:8px; padding:0.75rem; font-size:0.75rem; color:#0369a1; line-height:1.5;">
+          💡 <strong>0-Byte 空間保障提醒：</strong><br>
+          照片推入 Pixel 後會存入 <code>/sdcard/DCIM/Camera</code>，由手機 Google 相簿以「壓縮畫質 (Storage Saver)」自動無限備份至 <code>your-primary@gmail.com</code>，完全不佔用 Google 帳號空間與 API 配額！
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeLaunchModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitLaunchTask()">🚀 立即啟動中繼任務</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TITLES = {
+      home: '🏠 設備與數據總覽',
+      sources: '📁 多來源設備與儲存媒介管理',
+      rclone: '☁️ rclone 雲端通道與排程自動化',
+      albums: '🖼️ Google 相簿管理',
+      sharing: '🤝 共享相簿轉移指南',
+      tools: '🛠️ 實用工具箱',
+      logs: '📜 即時終端日誌'
+    };
+
+    let currentDrillPath = '/Volumes';
+    let currentDrillParent = null;
+
+    function navTab(tabId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      }
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.getElementById('pageTitle').innerHTML = TITLES[tabId];
+
+      if (tabId === 'sources') {
+        loadDevices();
+        loadActiveTasks();
+      }
+      if (tabId === 'rclone') loadRcloneRemotes();
+      if (tabId === 'albums') loadAlbums();
+    }
+
+    async function refreshAll() {
+      await fetchStatus();
+      loadDevices();
+      loadActiveTasks();
+    }
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const d = await res.json();
+
+        if (d.drive) {
+          document.getElementById('driveDetail').innerText = `可用 ${d.drive.avail_gb} GB / 總量 954 GB`;
+          document.getElementById('driveFreedText').innerText = `+${d.drive.freed_gb} GB`;
+          document.getElementById('driveUsageText').innerText = `${d.drive.percent_used}%`;
+          document.getElementById('segDriveUsed').style.width = d.drive.percent_used + '%';
+          document.getElementById('segDriveFree').style.width = (100 - d.drive.percent_used) + '%';
+          document.getElementById('metricFreed').innerText = `+${d.drive.freed_gb} GB`;
+        }
+
+        if (d.pixel) {
+          document.getElementById('metricPixelFree').innerText = `可用 ${d.pixel.free_gb} GB • 雙緩衝高速推入`;
+        }
+
+        if (d.progress) {
+          document.getElementById('metricPercent').innerText = d.progress.total_percent + '%';
+          document.getElementById('metricFilesText').innerText = `已處理 ${d.progress.done_files.toLocaleString()} / ${d.progress.total_files.toLocaleString()} 檔案`;
+        }
+
+        if (d.backup) {
+          document.getElementById('metricPixelQueue').innerText = d.backup.status === 'complete' ? '交接新批次' : `剩餘 ${d.backup.count} 檔`;
+        }
+
+        if (d.logs) {
+          const logBox = document.getElementById('consoleLogs');
+          logBox.innerHTML = d.logs.map(l => `<div>${l}</div>`).join('');
+          logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        document.getElementById('metricRelayStatus').innerText = d.relay_running ? '持續運轉中' : '未啟動';
+        document.getElementById('metricRelayStatus').style.color = d.relay_running ? 'var(--success)' : 'var(--text-muted)';
+        document.getElementById('sidebarStatusText').innerText = d.relay_running ? 'Pixel 無限中繼站工作中' : '中繼站就緒中';
+      } catch (e) {
+        console.error("fetchStatus error", e);
+      }
+    }
+
+    async function loadDevices() {
+      try {
+        const res = await fetch('/api/devices');
+        const list = await res.json();
+        const tbody = document.getElementById('deviceTableBody');
+        tbody.innerHTML = '';
+        list.forEach(dev => {
+          const isPhone = dev.type === 'android' || dev.type === 'ios';
+          const actionButtons = isPhone
+            ? `<button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="openLaunchModal('${dev.path || ''}')">⚡ 設為中繼站</button>`
+            : `
+              <div style="display:flex; gap:0.4rem;">
+                <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openDrillModal('${dev.path}')">📁 瀏覽</button>
+                <button class="btn btn-primary" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openLaunchModal('${dev.path}')">🚀 中繼</button>
+                <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="cleanJunkPath('${dev.path}')">🧹 清理</button>
+              </div>
+            `;
+
+          tbody.innerHTML += `
+            <tr>
+              <td><span style="font-size:1.2rem;">${dev.icon}</span></td>
+              <td><strong>${dev.name}</strong></td>
+              <td style="font-family:var(--font-mono); font-size:0.8rem;">${dev.path || dev.id}</td>
+              <td><span class="badge badge-success">${dev.detail || dev.status}</span></td>
+              <td>${actionButtons}</td>
+            </tr>
+          `;
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadActiveTasks() {
+      const container = document.getElementById('activeTasksList');
+      try {
+        const res = await fetch('/api/relay/active');
+        const data = await res.json();
+        if (data.tasks && data.tasks.length > 0) {
+          container.innerHTML = data.tasks.map(t => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.65rem 0.85rem; margin-bottom:0.5rem;">
+              <div>
+                <span class="badge badge-primary">PID: ${t.pid}</span>
+                <span style="font-family:var(--font-mono); font-size:0.75rem; margin-left:0.5rem; color:#334155;">${t.cmd.substring(0, 80)}...</span>
+              </div>
+              <button class="btn btn-danger" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="stopTask(${t.pid})">⏹️ 終止任務</button>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<span style="color:var(--text-muted);">目前無額外中繼任務執行中</span>';
+        }
+      } catch (e) {
+        container.innerHTML = '<span style="color:#ef4444;">無法讀取任務列表</span>';
+      }
+    }
+
+    async function stopTask(pid) {
+      if (!confirm(`確定要終止 PID ${pid} 的中繼任務嗎？`)) return;
+      const res = await fetch('/api/relay/stop_task', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({pid})
+      });
+      const d = await res.json();
+      alert(d.msg || d.error);
+      loadActiveTasks();
+      fetchStatus();
+    }
+
+    /* Drill Modal Functions */
+    async function openDrillModal(startPath) {
+      currentDrillPath = startPath || '/Volumes';
+      document.getElementById('drillModal').classList.add('open');
+      loadDrillPath(currentDrillPath);
+    }
+
+    function closeDrillModal() {
+      document.getElementById('drillModal').classList.remove('open');
+    }
+
+    async function loadDrillPath(path) {
+      const container = document.getElementById('drillItemsList');
+      const curPathLabel = document.getElementById('drillCurrentPath');
+      const backBtn = document.getElementById('drillBackBtn');
+      curPathLabel.innerText = path;
+      container.innerHTML = '<div style="padding:1rem; text-align:center; color:var(--text-muted);">讀取目錄中 (毫秒響應)...</div>';
+
+      try {
+        const res = await fetch(`/api/fs/drill?path=${encodeURIComponent(path)}`);
+        const data = await res.json();
+        if (!data.success) {
+          container.innerHTML = `<div style="color:#ef4444; padding:1rem;">錯誤：${data.error}</div>`;
+          return;
+        }
+
+        currentDrillPath = data.path;
+        currentDrillParent = data.parent;
+        backBtn.style.display = currentDrillParent ? 'block' : 'none';
+
+        if (data.items.length === 0) {
+          container.innerHTML = '<div style="padding:1rem; text-align:center; color:var(--text-muted);">此資料夾為空</div>';
+          return;
+        }
+
+        container.innerHTML = data.items.map(item => {
+          if (item.is_dir) {
+            return `
+              <div class="folder-item" onclick="loadDrillPath('${item.path}')">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <span style="font-size:1.1rem;">📁</span>
+                  <strong>${item.name}</strong>
+                </div>
+                <button class="btn btn-outline" style="padding:0.2rem 0.5rem; font-size:0.75rem;" onclick="event.stopPropagation(); openLaunchModal('${item.path}')">🚀 選此資料夾</button>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="folder-item" style="cursor:default;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <span style="font-size:1.1rem;">📄</span>
+                  <span style="font-size:0.85rem;">${item.name}</span>
+                </div>
+                <span style="font-size:0.75rem; color:var(--text-muted);">${item.size_str}</span>
+              </div>
+            `;
+          }
+        }).join('');
+      } catch (e) {
+        container.innerHTML = `<div style="color:#ef4444; padding:1rem;">網路讀取失敗</div>`;
+      }
+    }
+
+    function drillGoParent() {
+      if (currentDrillParent) loadDrillPath(currentDrillParent);
+    }
+
+    function drillSelectCurrentAsRelay() {
+      closeDrillModal();
+      openLaunchModal(currentDrillPath);
+    }
+
+    /* Launch Modal Functions */
+    function openLaunchModal(defaultPath) {
+      document.getElementById('launchSourceInput').value = defaultPath || '';
+      document.getElementById('launchModal').classList.add('open');
+    }
+
+    function closeLaunchModal() {
+      document.getElementById('launchModal').classList.remove('open');
+    }
+
+    async function submitLaunchTask() {
+      const source = document.getElementById('launchSourceInput').value.trim();
+      const device = document.getElementById('launchDeviceSelect').value;
+      const batchGb = parseFloat(document.getElementById('launchBatchSelect').value);
+      const deleteSource = document.querySelector('input[name="launchStrategy"]:checked').value === 'move';
+
+      if (!source) {
+        alert('請填寫來源路徑！');
+        return;
+      }
+
+      const res = await fetch('/api/relay/start_task', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          source_path: source,
+          device_serial: device,
+          batch_gb: batchGb,
+          delete_source: deleteSource
+        })
+      });
+
+      const d = await res.json();
+      if (d.success) {
+        alert(d.msg);
+        closeLaunchModal();
+        loadActiveTasks();
+        navTab('logs');
+      } else {
+        alert('啟動失敗：' + d.error);
+      }
+    }
+
+    async function cleanJunkPath(path) {
+      if (!confirm(`確定要清除【${path}】中的 .json、.thm、.aae、.DS_Store 等無效檔案嗎？`)) return;
+      const res = await fetch('/api/tools/clean_junk', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({path})
+      });
+      const d = await res.json();
+      alert(d.msg || (d.success ? '清理完成！' : '清理失敗'));
+    }
+
+    async function loadRcloneRemotes() {
+      try {
+        const res = await fetch('/api/rclone/remotes');
+        const list = await res.json();
+        const tbody = document.getElementById('rcloneTableBody');
+        tbody.innerHTML = '';
+        list.forEach(r => {
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${r.name}</strong></td>
+              <td>${r.type}</td>
+              <td>your-secondary@gmail.com</td>
+              <td>
+                <button class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="rcloneAction('${r.name}:', 'cleanup')">🧹 清空垃圾桶</button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadAlbums() {
+      const container = document.getElementById('albumsGrid');
+      const loader = document.getElementById('albumsLoading');
+      loader.style.display = 'block';
+      container.innerHTML = '';
+      try {
+        const res = await fetch('/api/gphotos/albums');
+        const data = await res.json();
+        loader.style.display = 'none';
+        if (data.success && data.albums) {
+          data.albums.forEach(alb => {
+            const cover = alb.coverPhotoBaseUrl ? `<img src="${alb.coverPhotoBaseUrl}=w300-h200-c" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:0.5rem;">` : '<div style="height:120px; background:#e2e8f0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:2rem; margin-bottom:0.5rem;">🖼️</div>';
+            container.innerHTML += `
+              <div style="border:1px solid #e2e8f0; border-radius:12px; padding:0.75rem; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+                ${cover}
+                <div style="font-weight:700; font-size:0.85rem; margin-bottom:0.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${alb.title || '未命名相簿'}</div>
+                <div style="font-size:0.75rem; color:#64748b;">${alb.mediaItemsCount || 0} 個項目</div>
+              </div>
+            `;
+          });
+        } else {
+          container.innerHTML = `<div style="color:#ef4444; font-size:0.85rem;">無法取得相簿列表 (${data.error || '請確認授權'})</div>`;
+        }
+      } catch (e) {
+        loader.style.display = 'none';
+        container.innerHTML = `<div style="color:#ef4444; font-size:0.85rem;">網路錯誤</div>`;
+      }
+    }
+
+    async function createAlbumPrompt() {
+      const title = prompt("請輸入新相簿名稱：");
+      if (!title) return;
+      const res = await fetch('/api/gphotos/create_album', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title})
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("相簿建立成功！");
+        loadAlbums();
+      } else {
+        alert("建立失敗：" + data.error);
+      }
+    }
+
+    async function cleanJunkPrompt() {
+      const p = prompt("請輸入欲批次清理無效檔案的資料夾路徑：", "~/Pictures");
+      if (!p) return;
+      cleanJunkPath(p);
+    }
+
+    async function controlRelay(action) {
+      if (!confirm(`確定要執行 ${action} 中繼服務嗎？`)) return;
+      const res = await fetch('/api/relay/control', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action})
+      });
+      const d = await res.json();
+      alert(d.msg || (d.success ? '指令已送出' : d.error));
+    }
+
+    async function rcloneAction(remote, action) {
+      if (!confirm(`確定對 ${remote} 執行 ${action} 嗎？`)) return;
+      const res = await fetch('/api/rclone/action', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({remote, action})
+      });
+      const d = await res.json();
+      alert(d.msg || (d.success ? '成功' : d.error));
+    }
+
+    // Auto polling
+    fetchStatus();
+    setInterval(fetchStatus, 3000);
+  </script>
+</body>
+</html>

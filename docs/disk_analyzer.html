@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disk Analyzer Pro Web - 專業磁碟分析與重複清理平台 (雙埠整合版)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Chart.js for Donut Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* 允許文字自由選取與複製 */
+    body, html, * {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- macOS 頂部導航列 (Top Command Bar) -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+      <div class="flex items-center space-x-3">
+        <!-- macOS 視窗按鈕 -->
+        <div class="flex space-x-1.5 mr-2">
+          <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+          <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+          <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <i class="ph-fill ph-hard-drives text-sky-400 text-xl"></i>
+          <span class="font-bold text-sm tracking-wide text-slate-100">Disk Analyzer Pro</span>
+          <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-1.5 py-0.5 rounded font-mono">SQLite 增量日誌版</span>
+        </div>
+      </div>
+
+      <!-- 右側：磁碟下拉選單 + 快取標籤 + NAS 快捷鍵 -->
+      <div class="flex items-center space-x-3 text-xs">
+        <div id="cacheStatusPill" class="hidden items-center space-x-1 bg-emerald-950/70 border border-emerald-700/60 text-emerald-300 px-2.5 py-1 rounded-full text-[11px] font-mono">
+          <i class="ph-bold ph-lightning text-emerald-400"></i>
+          <span>SQLite 快取命中</span>
+        </div>
+
+        <!-- 磁碟快速切換下拉選單 -->
+        <div class="flex items-center space-x-1.5 bg-slate-800 border border-slate-700 py-1 px-2.5 rounded-lg text-slate-200 font-mono text-[11px]">
+          <i class="ph-fill ph-hard-drive text-sky-400"></i>
+          <select id="globalVolumeSelect" onchange="onVolumeChange(this.value)" class="bg-transparent text-slate-200 focus:outline-none cursor-pointer pr-1 max-w-[280px]">
+            <option value="">載入磁碟列表中...</option>
+          </select>
+        </div>
+
+        <!-- 前往 Google 相簿管家 (8989) 快捷連結按鈕 -->
+        <a href="http://localhost:8989/" target="_blank" class="hidden sm:flex items-center space-x-1 bg-sky-950/70 hover:bg-sky-900 border border-sky-700/60 text-sky-300 px-2.5 py-1 rounded-lg text-[11px] font-mono transition shadow-sm" title="開啟 Google 相簿數據管家">
+          <i class="ph-bold ph-images"></i>
+          <span>Google 相簿數據管家 (8989)</span>
+          <i class="ph-bold ph-arrow-square-out text-[10px]"></i>
+        </a>
+
+        <!-- NAS 快捷連結按鈕 -->
+        <a href="http://nas.local:5000/" target="_blank" class="hidden sm:flex items-center space-x-1 bg-amber-950/70 hover:bg-amber-900 border border-amber-700/60 text-amber-300 px-2.5 py-1 rounded-lg text-[11px] font-mono transition shadow-sm" title="開啟 Synology DSM 管理後台">
+          <i class="ph-bold ph-globe"></i>
+          <span>Synology NAS (DSM)</span>
+          <i class="ph-bold ph-arrow-square-out text-[10px]"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- 功能頁籤切換 (Tabs) -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex space-x-1 bg-slate-950/50 pt-1 border-t border-slate-800 overflow-x-auto custom-scrollbar">
+      <button onclick="switchTab('tab-pro')" id="btn-tab-pro" class="tab-btn py-2 px-3.5 text-xs font-semibold rounded-t-lg bg-slate-100 text-slate-900 flex items-center space-x-2 border-t-2 border-sky-500 whitespace-nowrap">
+        <i class="ph-bold ph-chart-donut text-sky-600"></i>
+        <span>深度總覽 & 類型圓餅圖 (Pro Overview)</span>
+      </button>
+      <button onclick="switchTab('tab-explorer')" id="btn-tab-explorer" class="tab-btn py-2 px-3.5 text-xs font-medium rounded-t-lg text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+        <i class="ph-bold ph-folder-notch-open"></i>
+        <span>目錄層級深入拆解 (File Explorer)</span>
+      </button>
+      <button onclick="switchTab('tab-duplicates')" id="btn-tab-duplicates" class="tab-btn py-2 px-3.5 text-xs font-medium rounded-t-lg text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+        <i class="ph-bold ph-copy"></i>
+        <span>重複檔案智慧比對與清理</span>
+      </button>
+      <button onclick="switchTab('tab-presets')" id="btn-tab-presets" class="tab-btn py-2 px-3.5 text-xs font-medium rounded-t-lg text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+        <i class="ph-bold ph-sparkle"></i>
+        <span>常用情境預設方案</span>
+      </button>
+      <button onclick="switchTab('tab-pixel')" id="btn-tab-pixel" class="tab-btn py-2 px-3.5 text-xs font-medium rounded-t-lg text-amber-400 hover:text-amber-300 flex items-center space-x-2 whitespace-nowrap">
+        <i class="ph-bold ph-device-mobile-camera text-base"></i>
+        <span>iPhone ➔ Pixel 4/5 轉傳監控中心</span>
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      </button>
+      <button onclick="switchTab('tab-sources')" id="btn-tab-sources" class="tab-btn py-2 px-3.5 text-xs font-medium rounded-t-lg text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+        <i class="ph-bold ph-hard-drive"></i>
+        <span>多來源儲存與中繼發射 (Sources)</span>
+      </button>
+      <button onclick="switchTab('tab-cloud')" id="btn-tab-cloud" class="tab-btn py-2 px-3.5 text-xs font-medium rounded-t-lg text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+        <i class="ph-bold ph-cloud"></i>
+        <span>Google 相簿 & 雲端管家</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主工作區 (Main Container) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-5 flex flex-col gap-4">
+
+    <!-- ============================================== -->
+    <!-- TAB 1: 仿 Disk Analyzer Pro 深度分析與圓餅圖 -->
+    <!-- ============================================== -->
+    <section id="tab-pro" class="tab-content space-y-4">
+      
+      <!-- 目錄選擇與快取狀態列 -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center space-x-2 flex-1">
+          <span class="text-xs font-bold text-slate-600 whitespace-nowrap">當前分析目標：</span>
+          <div class="flex items-center space-x-1 flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-xs text-slate-800">
+            <i class="ph-bold ph-folder text-amber-500"></i>
+            <input type="text" id="deepTargetInput" value="~/Pictures" class="bg-transparent w-full focus:outline-none">
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="triggerDeepAnalysis()" id="btnDeepScan" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition">
+            <i class="ph-bold ph-arrows-clockwise"></i>
+            <span>分析此目錄</span>
+          </button>
+          <button onclick="browseDir('deep')" class="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium">
+            瀏覽...
+          </button>
+        </div>
+      </div>
+
+      <!-- 統計摘要指標卡 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] text-slate-400 font-medium">總佔用容量</div>
+          <div id="statTotalSize" class="text-lg font-bold text-slate-900 mt-0.5">--</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] text-slate-400 font-medium">總檔案數量</div>
+          <div id="statTotalFiles" class="text-lg font-bold text-sky-600 mt-0.5">--</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] text-slate-400 font-medium">子資料夾總數</div>
+          <div id="statTotalDirs" class="text-lg font-bold text-indigo-600 mt-0.5">--</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-[11px] text-slate-400 font-medium">快取引擎狀態</div>
+          <div id="statCacheHit" class="text-xs font-bold text-emerald-600 mt-1 flex items-center space-x-1">
+            <i class="ph-bold ph-check-circle"></i>
+            <span>SQLite 增量監聽中</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 上半部：圓餅圖 (Donut Chart) + 類型佔用詳細列表 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <!-- 圓餅圖區塊 -->
+        <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col items-center justify-center min-h-[300px]">
+          <div class="w-full text-left text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
+            <span>檔案類型佔比 (File Types)</span>
+            <span id="chartTotalLabel" class="text-slate-400 font-mono text-[11px]"></span>
+          </div>
+          <div class="relative w-56 h-56 flex items-center justify-center">
+            <canvas id="typeDonutChart"></canvas>
+            <div id="donutCenterText" class="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+              <span class="text-[10px] text-slate-400 uppercase">總容量</span>
+              <span id="donutCenterSize" class="text-xs font-bold text-slate-800">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 類型佔用列表表格 -->
+        <div class="lg:col-span-8 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col">
+          <div class="text-xs font-bold text-slate-700 mb-3 flex items-center justify-between">
+            <span>類型容量分佈明細 (Type Summary Breakdown)</span>
+            <span class="text-[11px] text-slate-400 font-normal">依檔案副檔名智慧分類歸納</span>
+          </div>
+          <div class="flex-1 overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 uppercase font-semibold border-y border-slate-100">
+                <tr>
+                  <th class="py-2 px-3">類型</th>
+                  <th class="py-2 px-3 text-right">檔案數量</th>
+                  <th class="py-2 px-3 text-right">佔用大小</th>
+                  <th class="py-2 px-3 text-right">佔比 (%)</th>
+                  <th class="py-2 px-3 w-32">視覺比例條</th>
+                </tr>
+              </thead>
+              <tbody id="typeBreakdownBody" class="divide-y divide-slate-100 font-mono">
+                <!-- 動態注入 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 下半部：Top 100 最大檔案列表 (支援點擊開啟 / Finder 定位) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div class="flex items-center space-x-2">
+            <i class="ph-bold ph-trend-up text-rose-500"></i>
+            <h3 class="text-xs font-bold text-slate-800">佔用容量最大檔案排行榜 (Top 100 Largest Files on Disk)</h3>
+          </div>
+          <span class="text-[11px] text-slate-500 font-mono">💡 點擊「檔案名稱」直接開啟檔案，點擊「定位」在 Finder 中查看</span>
+        </div>
+
+        <div class="overflow-x-auto max-h-[380px] custom-scrollbar">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold sticky top-0 border-b border-slate-200">
+              <tr>
+                <th class="py-2 px-3 w-8 text-center">#</th>
+                <th class="py-2 px-3">檔案名稱 (點擊開啟)</th>
+                <th class="py-2 px-3 text-right">大小</th>
+                <th class="py-2 px-3 w-36">佔比</th>
+                <th class="py-2 px-3">修改日期</th>
+                <th class="py-2 px-3">動作 / 完整路徑</th>
+              </tr>
+            </thead>
+            <tbody id="topFilesBody" class="divide-y divide-slate-100 text-slate-600">
+              <!-- 動態注入 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: 目錄層級深入拆解 (支援點擊進入 + 檔案點擊直接開啟) -->
+    <!-- ============================================== -->
+    <section id="tab-explorer" class="tab-content hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center space-x-2 flex-1">
+            <button onclick="navigateUp()" id="btnNavUp" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center space-x-1">
+              <i class="ph-bold ph-arrow-up"></i>
+              <span>上一層</span>
+            </button>
+            <div class="flex-1 flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-xs">
+              <span id="breadcrumbBar" class="text-slate-600 flex items-center space-x-1 truncate"></span>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="drillCurrentFolder(false)" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium flex items-center space-x-1">
+              <i class="ph-bold ph-lightning"></i>
+              <span>快速載入 (快取)</span>
+            </button>
+            <button onclick="drillCurrentFolder(true)" class="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium flex items-center space-x-1" title="強制重新掃描並更新 SQLite 快取">
+              <i class="ph-bold ph-arrows-clockwise"></i>
+              <span>強制刷新</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 font-mono">
+          <div class="flex items-center space-x-2">
+            <span id="explorerSummary">正在載入...</span>
+          </div>
+          <div id="explorerCacheNotice" class="text-emerald-700 font-medium"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-y border-slate-200">
+              <tr>
+                <th class="py-2.5 px-3">資料夾 / 檔案名稱 (資料夾點擊進入，檔案點擊直接開啟)</th>
+                <th class="py-2.5 px-3">類型</th>
+                <th class="py-2.5 px-3 text-right">大小</th>
+                <th class="py-2.5 px-3 w-36">佔比</th>
+                <th class="py-2.5 px-3 text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="explorerTableBody" class="divide-y divide-slate-100 text-slate-600"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: 重複檔案比對清理 -->
+    <!-- ============================================== -->
+    <section id="tab-duplicates" class="tab-content hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <h2 class="text-xs font-bold text-slate-900 flex items-center space-x-2">
+            <i class="ph-bold ph-sliders-horizontal text-sky-600"></i>
+            <span>重複比對規則配置</span>
+          </h2>
+          <span class="text-[11px] text-slate-400 font-mono">支援 Byte-for-Byte 雜湊校驗與跨目錄對比</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="border-2 rounded-xl p-3.5 cursor-pointer transition flex items-start space-x-3 border-sky-600 bg-sky-50/40" id="label-mode-cross" onclick="selectScanMode('cross_folder')">
+            <input type="radio" name="scan_mode" value="cross_folder" checked class="mt-1 text-sky-600">
+            <div>
+              <div class="font-bold text-xs text-slate-900">跨目錄基準比對 (Folder A vs Folder B)</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">例如：待清理的「手機備份」比對「Google 相簿 Takeout (基準)」。</div>
+            </div>
+          </label>
+
+          <label class="border-2 rounded-xl p-3.5 cursor-pointer transition flex items-start space-x-3 border-slate-200 bg-white" id="label-mode-single" onclick="selectScanMode('single_folder')">
+            <input type="radio" name="scan_mode" value="single_folder" class="mt-1 text-sky-600">
+            <div>
+              <div class="font-bold text-xs text-slate-900">單一目錄內部重複排查</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">例如：在同一顆外接硬碟內部搜尋重複檔案，依關鍵字優先順序保留。</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          <div class="space-y-1">
+            <label class="text-[11px] font-semibold text-slate-700 flex justify-between">
+              <span id="labelPathA">待清理目錄 (Path A)</span>
+              <button onclick="browseDir('pathA')" class="text-sky-600 hover:underline">瀏覽選擇</button>
+            </label>
+            <input type="text" id="inputPathA" value="~/Pictures/MobileBackup" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono">
+          </div>
+
+          <div id="wrapperPathB" class="space-y-1">
+            <label class="text-[11px] font-semibold text-slate-700 flex justify-between">
+              <span>主要基準目錄 (Path B - 絕對保留)</span>
+              <button onclick="browseDir('pathB')" class="text-sky-600 hover:underline">瀏覽選擇</button>
+            </label>
+            <input type="text" id="inputPathB" value="~/Pictures/Photos_B" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">最小檔案大小門檻</label>
+            <select id="minSizeSelect" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+              <option value="1024">大於 1 KB (全比對)</option>
+              <option value="51200">大於 50 KB</option>
+              <option value="1048576" selected>大於 1 MB (推薦照片)</option>
+              <option value="10485760">大於 10 MB (大照片/影片)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">雜湊二進位校驗 (MD5)</label>
+            <select id="verifyHashSelect" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+              <option value="true" selected>開啟 (嚴格比對首尾區塊，零誤刪)</option>
+              <option value="false">關閉 (僅依檔名與字節數，速度極快)</option>
+            </select>
+          </div>
+          <div id="wrapperPriority" class="hidden">
+            <label class="font-semibold text-slate-700 block mb-1">保留優先級關鍵字 (逗號分隔)</label>
+            <input type="text" id="priorityInput" value="iPhone,JSPhone,2011~2016,photo,google photo,sd_card" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono">
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-1">
+          <button onclick="startDuplicateScan()" id="btnStartScan" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg text-xs flex items-center space-x-1.5 shadow-sm">
+            <i class="ph-bold ph-magnifying-glass"></i>
+            <span>開始掃描比對</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 掃描進度指示條 -->
+      <div id="scanProgressCard" class="hidden bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span id="scanStatusText" class="text-sky-700 flex items-center space-x-2">
+            <i class="ph-bold ph-spinner-gap animate-spin"></i>
+            <span>正在比對中...</span>
+          </span>
+          <span id="scanPercentText" class="text-slate-500 font-mono">0%</span>
+        </div>
+        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+          <div id="scanProgressBar" class="bg-gradient-to-r from-sky-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300 w-0"></div>
+        </div>
+      </div>
+
+      <!-- 比對結果清單 -->
+      <div id="resultsCard" class="hidden bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">比對完成</span>
+              <h3 class="text-xs font-bold text-slate-900">重複檔案分析清單</h3>
+            </div>
+            <p class="text-xs text-slate-500 mt-1" id="resultsSummaryText"></p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="exportCSV()" class="px-2.5 py-1 text-xs border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg">匯出 CSV</button>
+            <button onclick="toggleSelectAll(true)" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg">全選</button>
+            <button onclick="toggleSelectAll(false)" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded-lg">取消全選</button>
+            <button onclick="openCleanModal()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold">
+              執行清理 (<span id="selectedCountText">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-[400px] custom-scrollbar">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold sticky top-0 border-b border-slate-200">
+              <tr>
+                <th class="py-2 px-3 w-8 text-center"><input type="checkbox" id="headerCheckbox" onchange="toggleSelectAll(this.checked)" checked></th>
+                <th class="py-2 px-3">重複檔案名稱</th>
+                <th class="py-2 px-3">大小</th>
+                <th class="py-2 px-3">擬刪除路徑 (重複者)</th>
+                <th class="py-2 px-3">擬保留基準路徑</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+          <div>顯示第 <span id="pageStartText" class="font-bold">1</span> 至 <span id="pageEndText" class="font-bold">25</span> 筆，共 <span id="pageTotalText" class="font-bold">0</span> 筆</div>
+          <div class="flex items-center space-x-2">
+            <button onclick="changePage(-1)" id="btnPrevPage" class="px-2 py-0.5 border border-slate-200 rounded hover:bg-slate-50">上一頁</button>
+            <span id="pageNumberText" class="px-2 font-bold text-slate-700">1 / 1</span>
+            <button onclick="changePage(1)" id="btnNextPage" class="px-2 py-0.5 border border-slate-200 rounded hover:bg-slate-50">下一頁</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 4: 常用情境預設 -->
+    <!-- ============================================== -->
+    <section id="tab-presets" class="tab-content hidden space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <h2 class="text-xs font-bold text-slate-900 flex items-center space-x-2">
+          <i class="ph-bold ph-lightning text-indigo-600"></i>
+          <span>一鍵情境配置快速套用</span>
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          <div class="border border-slate-200 rounded-xl p-4 hover:border-sky-500 transition space-y-2 bg-slate-50/50">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-slate-900">方案 A：外接硬碟 vs NAS (Photos)</span>
+              <span class="text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 rounded font-semibold">推薦</span>
+            </div>
+            <p class="text-[11px] text-slate-600">以 NAS 個人相片庫為絕對基準，找出外接硬碟中重複之相片副本並清理。</p>
+            <button onclick="applyPreset('preset_a')" class="w-full py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-medium">套用並前往比對</button>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl p-4 hover:border-sky-500 transition space-y-2 bg-slate-50/50">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-slate-900">方案 B：MobileBackup 內部跨裝置重複</span>
+              <span class="text-[10px] px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded font-semibold">智慧優先級</span>
+            </div>
+            <p class="text-[11px] text-slate-600">全面掃描 MobileBackup 內部，優先保留主要手機相簿，清理次要目錄重複。</p>
+            <button onclick="applyPreset('preset_b')" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-medium">套用並前往比對</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 5: iPhone ➔ Pixel 4/5 轉傳監控中心 -->
+    <!-- ============================================== -->
+    <section id="tab-pixel" class="tab-content hidden space-y-4">
+      
+      <!-- 狀態總結頂部卡片 -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-xl flex-shrink-0">
+            <i class="ph-bold ph-device-mobile"></i>
+          </div>
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium">iPhone 待轉傳新相片</div>
+            <div class="text-lg font-bold text-slate-900" id="pixelInboxCount">-- 檔</div>
+            <div class="text-[10px] text-slate-500 font-mono" id="pixelInboxSize">-- GB</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl flex-shrink-0">
+            <i class="ph-bold ph-arrows-clockwise animate-spin"></i>
+          </div>
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium">本批推入 Pixel 總計</div>
+            <div class="text-lg font-bold text-amber-600" id="pixelBatchFiles">-- 檔</div>
+            <div class="text-[10px] text-slate-500 font-mono" id="pixelBatchSize">-- GB</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+            <i class="ph-bold ph-cloud-arrow-up"></i>
+          </div>
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium">Google 相簿備份狀態</div>
+            <div class="text-sm font-bold text-emerald-600 mt-1 flex items-center space-x-1" id="pixelStatusBadge">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>同步中...</span>
+            </div>
+            <div class="text-[10px] text-slate-500 font-mono" id="pixelRemainingBadge">剩餘: -- 項</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl flex-shrink-0">
+            <i class="ph-bold ph-broadcast"></i>
+          </div>
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium">轉傳服務程序狀態</div>
+            <div class="text-xs font-bold text-indigo-700 mt-1" id="pixelRelayPid">守護進程運行中</div>
+            <div class="text-[10px] text-slate-400 font-mono" id="pixelLastTime">最近活動: --</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 視覺化流程卡片 -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h3 class="text-xs font-bold text-slate-900 flex items-center space-x-2">
+          <i class="ph-bold ph-git-commit text-sky-600"></i>
+          <span>四階段端到端自動傳輸管線即時拓撲</span>
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+          <div class="border border-sky-200 bg-sky-50/50 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-sky-900">1. iPhone 拍照存檔</span>
+              <i class="ph-fill ph-check-circle text-emerald-500 text-base"></i>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              連上家中 Wi-Fi 或插上充電線，透過原生「影像擷取」通道自動傳輸。
+            </p>
+            <div class="text-[10px] bg-white px-2 py-1 rounded border border-sky-100 text-sky-700 font-mono truncate">
+              來源: iPhone (Wi-Fi)
+            </div>
+          </div>
+
+          <div class="border border-indigo-200 bg-indigo-50/50 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-indigo-900">2. Mac mini 智慧中繼</span>
+              <i class="ph-fill ph-check-circle text-emerald-500 text-base"></i>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              自動存入中繼收件夾，並由常駐程序比對防重排隊推送。
+            </p>
+            <div class="text-[10px] bg-white px-2 py-1 rounded border border-indigo-100 text-indigo-700 font-mono truncate">
+              收件夾: .../iPhone/2026
+            </div>
+          </div>
+
+          <div class="border border-amber-200 bg-amber-50/50 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-amber-900">3. Pixel 4/5 接收通道</span>
+              <i class="ph-bold ph-arrows-clockwise text-amber-500 animate-spin text-base"></i>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              透過 ADB/Wi-Fi 高速通道送入手機，並自動發出 MediaScan 廣播。
+            </p>
+            <div class="text-[10px] bg-white px-2 py-1 rounded border border-amber-100 text-amber-700 font-mono truncate">
+              目標: pixel-adb.local (ADB)
+            </div>
+          </div>
+
+          <div class="border border-emerald-200 bg-emerald-50/50 rounded-xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-emerald-900">4. Google 相簿無限上傳</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            </div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              享有無限高畫質備份！備份完成後自動清空手機內部已上傳檔案。
+            </p>
+            <div class="text-[10px] bg-white px-2 py-1 rounded border border-emerald-100 text-emerald-700 font-mono truncate">
+              目標帳號: Google Photos
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 即時活動日誌終端視窗 -->
+      <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-md p-4 space-y-2 text-white">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div class="flex items-center space-x-2">
+            <div class="flex space-x-1.5 mr-1">
+              <div class="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+            </div>
+            <span class="text-xs font-bold font-mono text-slate-200 flex items-center space-x-1.5">
+              <i class="ph-bold ph-terminal-window text-sky-400"></i>
+              <span>Pixel 自動轉傳即時活動日誌 (Live Output Console)</span>
+            </span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] text-slate-400 font-mono">每 2 秒自動刷新</span>
+            <button onclick="fetchPixelStatus()" class="text-xs px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono">手動刷新</button>
+          </div>
+        </div>
+
+        <div id="pixelLogConsole" class="font-mono text-[11px] text-slate-300 space-y-1 h-64 overflow-y-auto custom-scrollbar p-1">
+          <div class="text-slate-500">正在連線讀取日誌...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 6: 多來源儲存媒介與設備 (Sources) -->
+    <!-- ============================================== -->
+    <section id="tab-sources" class="tab-content hidden space-y-4">
+      <!-- 常用發射卡 -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <h3 class="text-xs font-bold text-slate-900 flex items-center space-x-2">
+          <i class="ph-bold ph-rocket-launch text-sky-600"></i>
+          <span>常用多來源照片庫快速發射</span>
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50 space-y-2">
+            <div class="font-bold text-xs text-slate-800">Synology NAS (Photos)</div>
+            <div class="text-[10px] text-slate-500 font-mono break-all">/Volumes/NAS/Photos</div>
+            <button onclick="openLaunchModal('/Volumes/NAS/Photos')" class="w-full py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-medium">🚀 啟動中繼至 Pixel</button>
+          </div>
+          <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50 space-y-2">
+            <div class="font-bold text-xs text-slate-800">外接硬碟 (Mac 本機 / 外接硬碟)</div>
+            <div class="text-[10px] text-slate-500 font-mono break-all">~/Pictures/ToGooglePhotos</div>
+            <button onclick="openLaunchModal('~/Pictures/ToGooglePhotos')" class="w-full py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-medium">🚀 啟動中繼至 Pixel</button>
+          </div>
+          <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50 space-y-2">
+            <div class="font-bold text-xs text-slate-800">iPhone 備份目錄</div>
+            <div class="text-[10px] text-slate-500 font-mono break-all">~/Pictures/iPhone_Import</div>
+            <button onclick="openLaunchModal('~/Pictures/iPhone_Import')" class="w-full py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-medium">🚀 啟動中繼至 Pixel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 設備列表 -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 class="text-xs font-bold text-slate-900">已偵測儲存媒介與設備</h3>
+          <button onclick="openLaunchModal('')" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded text-slate-700">➕ 自訂路徑中繼</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-y border-slate-200">
+              <tr>
+                <th class="py-2 px-3">類型</th>
+                <th class="py-2 px-3">名稱</th>
+                <th class="py-2 px-3">路徑 / 序號</th>
+                <th class="py-2 px-3">容量 / 狀態</th>
+                <th class="py-2 px-3 text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="sourcesDeviceTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 7: Google 相簿 & 雲端管家 (Cloud & Albums) -->
+    <!-- ============================================== -->
+    <section id="tab-cloud" class="tab-content hidden space-y-4">
+      <!-- rclone Remotes -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 class="text-xs font-bold text-slate-900">rclone 雲端通道配置</h3>
+          <button onclick="loadRcloneRemotes()" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded text-slate-700">🔄 重新整理</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-y border-slate-200">
+              <tr>
+                <th class="py-2 px-3">Remote 名稱</th>
+                <th class="py-2 px-3">服務類型</th>
+                <th class="py-2 px-3">關聯帳號</th>
+                <th class="py-2 px-3 text-center">操作</th>
+              </tr>
+            </thead>
+            <tbody id="rcloneTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 線上 Google 相簿 -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 class="text-xs font-bold text-slate-900">Google 相簿線上相簿清單</h3>
+          <button onclick="loadAlbums()" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 rounded text-slate-700">🔄 讀取相簿</button>
+        </div>
+        <div id="albumsGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div class="p-4 text-center text-slate-400 font-mono col-span-4">點擊「讀取相簿」檢視線上相簿</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 清理確認對話框 (Modal) -->
+  <div id="cleanModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full shadow-2xl border border-slate-200 p-5 space-y-3">
+      <div class="flex items-center space-x-2 text-rose-600">
+        <i class="ph-bold ph-warning text-xl"></i>
+        <h3 class="text-xs font-bold text-slate-900">安全確認：執行清理檔案</h3>
+      </div>
+      <div class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200">
+        已選取 <strong><span id="modalSelectedCount">0</span></strong> 個檔案，釋放約 <strong><span id="modalSelectedSize" class="text-rose-600 font-bold">0 MB</span></strong>
+      </div>
+      <div class="space-y-2 text-xs">
+        <label class="flex items-start space-x-2 cursor-pointer">
+          <input type="radio" name="clean_target_mode" value="permanent" checked class="mt-0.5 text-rose-600">
+          <div>
+            <div class="font-medium text-slate-900">永久直接刪除 (立即歸還磁碟可用空間)</div>
+          </div>
+        </label>
+        <label class="flex items-start space-x-2 cursor-pointer">
+          <input type="radio" name="clean_target_mode" value="trash" class="mt-0.5 text-sky-600">
+          <div>
+            <div class="font-medium text-slate-900">移動至外接磁碟暫存回收箱 (_trash_duplicates)</div>
+          </div>
+        </label>
+        <label class="flex items-center space-x-2 pt-2 border-t border-slate-100">
+          <input type="checkbox" id="cleanEmptyDirsCheckbox" checked class="text-sky-600 rounded">
+          <span class="text-slate-700">自動清理遺留之空資料夾</span>
+        </label>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeCleanModal()" class="px-3 py-1.5 border border-slate-200 text-slate-700 rounded text-xs font-medium">取消</button>
+        <button onclick="executeConfirmedClean()" id="btnConfirmClean" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-semibold">確認執行</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 資料夾全檔案系統瀏覽對話框 -->
+  <div id="browseModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full shadow-2xl border border-slate-200 p-5 space-y-3 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <span class="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+          <i class="ph-bold ph-folder"></i>
+          <span>選擇目錄 (支援最上層與各硬碟自由穿梭)</span>
+        </span>
+        <button onclick="closeBrowseModal()" class="text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x"></i></button>
+      </div>
+      
+      <!-- 快捷目錄按鈕 -->
+      <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-600">
+        <span class="font-bold">快捷跳轉：</span>
+        <button onclick="loadBrowsePath('/Volumes/home')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded flex items-center space-x-1">
+          <i class="ph-bold ph-cloud"></i>
+          <span>NAS 個人目錄 (/Volumes/home)</span>
+        </button>
+        <button onclick="loadBrowsePath('/Volumes/homes')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded flex items-center space-x-1">
+          <i class="ph-bold ph-cloud"></i>
+          <span>NAS 全部目錄 (/Volumes/homes)</span>
+        </button>
+        <button onclick="loadBrowsePath('~/Pictures')" class="px-2 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded">
+          外接硬碟 (ORICO)
+        </button>
+        <button onclick="loadBrowsePath('/Volumes')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded">外接硬碟總覽 (/Volumes)</button>
+        <button onclick="loadBrowsePath('/')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded">系統根目錄 (/)</button>
+        <button onclick="loadBrowsePath('~')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded">家目錄 (~)</button>
+      </div>
+
+      <div class="flex items-center space-x-2 text-xs font-mono bg-slate-100 p-2 rounded">
+        <span id="browseCurrentPath" class="truncate flex-1 font-bold">/</span>
+        <button onclick="browseUp()" id="btnModalUp" class="px-2 py-0.5 bg-white border border-slate-200 rounded hover:bg-slate-50">上一層</button>
+      </div>
+      <div id="browseFolderList" class="flex-1 overflow-y-auto space-y-1 custom-scrollbar text-xs border border-slate-100 rounded p-2"></div>
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+        <button onclick="closeBrowseModal()" class="px-3 py-1.5 border border-slate-200 text-slate-700 rounded text-xs">取消</button>
+        <button onclick="selectCurrentFolder()" class="px-3 py-1.5 bg-sky-600 text-white rounded text-xs font-medium">確定選取此目錄</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Launch Modal -->
+  <div id="launchModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full shadow-2xl border border-slate-200 p-5 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-xs font-bold text-slate-900">🚀 啟動多來源至 Pixel 中繼遷移</h3>
+        <button onclick="closeLaunchModal()" class="text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold mb-1">來源路徑：</label>
+          <input type="text" id="launchSourceInput" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded font-mono text-xs">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">中繼設備：</label>
+          <select id="launchDeviceSelect" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs">
+            <option value="auto">📱 自動偵測首台 Pixel (推薦)</option>
+            <option value="09211FDD4003MN">📱 Google Pixel 5 (09211FDD4003MN)</option>
+            <option value="flame">📱 Google Pixel 4</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">批次大小：</label>
+          <select id="launchBatchSelect" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs">
+            <option value="15">15 GB (平穩穩定)</option>
+            <option value="30" selected>30 GB (高速衝刺)</option>
+            <option value="50">50 GB (極限吞吐量)</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+        <button onclick="closeLaunchModal()" class="px-3 py-1.5 border border-slate-200 text-slate-700 rounded text-xs">取消</button>
+        <button onclick="submitLaunchTask()" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-xs font-semibold">立即發射</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let donutChartInstance = null;
+    let currentDrillPath = "~/Pictures";
+    let duplicateResults = [];
+    let selectedFilePaths = new Set();
+    let currentPage = 1;
+    const pageSize = 25;
+    let pollInterval = null;
+    let currentTask = null;
+    let browseTarget = null;
+    let currentBrowse = "~/Pictures";
+    let cachedVolumes = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadVolumes();
+      triggerDeepAnalysis();
+      drillFolder(currentDrillPath, false);
+      fetchPixelStatus();
+      setInterval(fetchPixelStatus, 2500);
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(el => {
+        el.classList.remove("bg-slate-100", "text-slate-900", "border-t-2", "border-sky-500", "border-amber-500");
+        el.classList.add("text-slate-400");
+      });
+
+      const targetEl = document.getElementById(tabId);
+      if (targetEl) targetEl.classList.remove("hidden");
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add("bg-slate-100", "text-slate-900", "border-t-2", tabId === 'tab-pixel' ? "border-amber-500" : "border-sky-500");
+        activeBtn.classList.remove("text-slate-400");
+      }
+      if (tabId === 'tab-pixel') {
+        fetchPixelStatus();
+      }
+      if (tabId === 'tab-sources') {
+        loadDevices();
+      }
+      if (tabId === 'tab-cloud') {
+        loadRcloneRemotes();
+      }
+    }
+
+    // 取得 Pixel 轉傳即時狀態與日誌
+    async function fetchPixelStatus() {
+      try {
+        const res = await fetch("/api/pixel_status");
+        const data = await res.json();
+        
+        const inboxCount = document.getElementById("pixelInboxCount");
+        if (inboxCount) inboxCount.textContent = `${data.inbox_count.toLocaleString()} 檔`;
+        const inboxSize = document.getElementById("pixelInboxSize");
+        if (inboxSize) inboxSize.textContent = `容量: ${data.inbox_size_formatted}`;
+        
+        const batchFiles = document.getElementById("pixelBatchFiles");
+        if (batchFiles) batchFiles.textContent = `${data.batch_files.toLocaleString()} 檔`;
+        const batchSize = document.getElementById("pixelBatchSize");
+        if (batchSize) batchSize.textContent = `大小: ${data.batch_size_str}`;
+        
+        const badge = document.getElementById("pixelStatusBadge");
+        if (badge) {
+          if (data.current_status === "complete") {
+            badge.innerHTML = `<i class="ph-fill ph-check-circle text-emerald-500 text-base"></i><span>本批備份完成！</span>`;
+          } else if (data.current_status === "backing_up") {
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>正在上傳備份中...</span>`;
+          } else if (data.current_status === "switching_batch") {
+            badge.innerHTML = `<i class="ph-bold ph-arrows-clockwise text-amber-500 animate-spin text-base"></i><span>正在推送新批次...</span>`;
+          } else {
+            badge.innerHTML = `<span>閒置就緒中</span>`;
+          }
+        }
+        
+        const remBadge = document.getElementById("pixelRemainingBadge");
+        if (remBadge) remBadge.textContent = `Google 相簿: ${data.pixel_remaining}`;
+        const relayPid = document.getElementById("pixelRelayPid");
+        if (relayPid) {
+          relayPid.textContent = data.relay_running ? "守護進程運行中 (PID 在線)" : "未偵測到進程";
+          relayPid.className = data.relay_running ? "text-xs font-bold text-emerald-600 mt-1" : "text-xs font-bold text-rose-600 mt-1";
+        }
+        const lastTime = document.getElementById("pixelLastTime");
+        if (lastTime) lastTime.textContent = `最近活動: ${data.last_timestamp || '剛剛'}`;
+        
+        const consoleEl = document.getElementById("pixelLogConsole");
+        if (consoleEl && data.recent_logs && data.recent_logs.length > 0) {
+          consoleEl.innerHTML = data.recent_logs.map(line => {
+            let color = "text-slate-300";
+            if (line.includes("🚀") || line.includes("即時進度")) color = "text-sky-300";
+            if (line.includes("🧹") || line.includes("100%")) color = "text-emerald-300";
+            if (line.includes("⚠️")) color = "text-amber-300";
+            return `<div class="${color}">${line}</div>`;
+          }).join("");
+          consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 載入磁碟空間與下拉選單
+    async function loadVolumes() {
+      try {
+        const res = await fetch("/api/volumes");
+        const vols = await res.json();
+        cachedVolumes = vols;
+        const select = document.getElementById("globalVolumeSelect");
+        if (!select) return;
+        select.innerHTML = "";
+
+        vols.forEach(v => {
+          const opt = document.createElement("option");
+          opt.value = v.path;
+          opt.textContent = `${v.name} (可用: ${v.free_formatted} / ${100 - v.percent}%)`;
+          if (v.path.includes("ORICO")) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function onVolumeChange(volPath) {
+      if (!volPath) return;
+      document.getElementById("deepTargetInput").value = volPath;
+      currentDrillPath = volPath;
+      document.getElementById("inputPathA").value = volPath;
+
+      document.getElementById("statTotalSize").textContent = "計算中...";
+      document.getElementById("statTotalFiles").textContent = "--";
+      document.getElementById("statTotalDirs").textContent = "--";
+      document.getElementById("chartTotalLabel").textContent = "分析中...";
+      document.getElementById("donutCenterSize").textContent = "分析中...";
+      document.getElementById("typeBreakdownBody").innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 font-mono"><i class="ph-bold ph-spinner animate-spin text-base"></i> 正在深度分析 ${volPath}...</td></tr>`;
+      document.getElementById("topFilesBody").innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 font-mono"><i class="ph-bold ph-spinner animate-spin text-base"></i> 正在檢索最大檔案排行榜...</td></tr>`;
+
+      triggerDeepAnalysis();
+      drillFolder(volPath, true);
+    }
+
+    async function openFileNative(filePath, action = 'open') {
+      try {
+        const res = await fetch(`/api/open_file?path=${encodeURIComponent(filePath)}&action=${action}`);
+        const data = await res.json();
+        if (data.error) {
+          alert("無法開啟: " + data.error);
+        }
+      } catch (e) {
+        alert("呼叫本機應用失敗: " + e.message);
+      }
+    }
+
+    // TAB 1: 深度分析 (Donut Chart + Top 100)
+    async function triggerDeepAnalysis() {
+      const target = document.getElementById("deepTargetInput").value;
+      const btn = document.getElementById("btnDeepScan");
+      btn.disabled = true;
+      btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i><span>分析中...</span>`;
+
+      try {
+        const res = await fetch(`/api/deep_analysis?path=${encodeURIComponent(target)}`);
+        const data = await res.json();
+        if (data.error) {
+          alert("分析失敗: " + data.error);
+          return;
+        }
+
+        document.getElementById("statTotalSize").textContent = data.total_size_formatted;
+        document.getElementById("statTotalFiles").textContent = data.total_files.toLocaleString();
+        document.getElementById("statTotalDirs").textContent = data.total_dirs.toLocaleString();
+        document.getElementById("chartTotalLabel").textContent = data.total_size_formatted;
+        document.getElementById("donutCenterSize").textContent = data.total_size_formatted;
+
+        const tbody = document.getElementById("typeBreakdownBody");
+        tbody.innerHTML = "";
+        const chartLabels = [];
+        const chartData = [];
+        const chartColors = [];
+
+        data.breakdown.forEach(b => {
+          chartLabels.push(b.label);
+          chartData.push(b.size);
+          chartColors.push(b.color);
+
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 transition";
+          tr.innerHTML = `
+            <td class="py-2 px-3 font-semibold text-slate-800 flex items-center space-x-2">
+              <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${b.color}"></span>
+              <span>${b.label}</span>
+            </td>
+            <td class="py-2 px-3 text-right text-slate-600">${b.count.toLocaleString()}</td>
+            <td class="py-2 px-3 text-right font-bold text-slate-800">${b.size_formatted}</td>
+            <td class="py-2 px-3 text-right text-slate-500">${b.percent}%</td>
+            <td class="py-2 px-3">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="h-2 rounded-full" style="width: ${b.percent}%; background-color: ${b.color}"></div>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        renderDonutChart(chartLabels, chartData, chartColors);
+
+        // Top 100
+        const topBody = document.getElementById("topFilesBody");
+        topBody.innerHTML = "";
+        data.top_100.forEach((f, idx) => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 transition";
+          const pct = data.total_size > 0 ? ((f.size / data.total_size) * 100).toFixed(2) : 0;
+          const encPath = encodeURIComponent(f.path);
+          tr.innerHTML = `
+            <td class="py-2 px-3 text-center text-slate-400">${idx + 1}</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">
+              <a href="javascript:void(0)" onclick="openFileNative('${encPath}', 'open')" class="hover:text-sky-600 hover:underline flex items-center space-x-1.5" title="點擊直接打開此檔案">
+                <i class="ph-bold ph-arrow-square-out text-sky-500"></i>
+                <span class="truncate max-w-[220px]">${f.name}</span>
+              </a>
+            </td>
+            <td class="py-2 px-3 text-right font-bold text-rose-600">${f.size_formatted}</td>
+            <td class="py-2 px-3">
+              <div class="flex items-center space-x-2">
+                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-rose-500 h-1.5 rounded-full" style="width: ${Math.min(100, pct * 4)}%"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 w-10 text-right">${pct}%</span>
+              </div>
+            </td>
+            <td class="py-2 px-3 text-slate-400 text-[11px] whitespace-nowrap">${f.mtime}</td>
+            <td class="py-2 px-3 text-slate-500 text-[11px]">
+              <div class="flex items-center space-x-2">
+                <button onclick="openFileNative('${encPath}', 'reveal')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] flex items-center space-x-1 whitespace-nowrap">
+                  <i class="ph-bold ph-folder-open"></i>
+                  <span>Finder 定位</span>
+                </button>
+                <span class="truncate max-w-xs" title="${f.path}">${f.path}</span>
+              </div>
+            </td>
+          `;
+          topBody.appendChild(tr);
+        });
+
+      } catch (e) {
+        alert("請求失敗: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i><span>分析此目錄</span>`;
+      }
+    }
+
+    function renderDonutChart(labels, data, colors) {
+      const ctx = document.getElementById('typeDonutChart').getContext('2d');
+      if (donutChartInstance) {
+        donutChartInstance.destroy();
+      }
+      donutChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.label}: ${formatBytes(context.raw)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // TAB 2: 目錄層級深入拆解
+    async function drillFolder(targetPath, forceRefresh = false) {
+      currentDrillPath = targetPath;
+      const tbody = document.getElementById("explorerTableBody");
+      const summary = document.getElementById("explorerSummary");
+      const notice = document.getElementById("explorerCacheNotice");
+      const breadcrumb = document.getElementById("breadcrumbBar");
+      const cachePill = document.getElementById("cacheStatusPill");
+
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 font-mono"><i class="ph-bold ph-spinner animate-spin text-base"></i> 讀取目錄內容中...</td></tr>`;
+
+      const parts = targetPath.split("/").filter(Boolean);
+      let crumbHtml = `<button onclick="drillFolder('/', false)" class="hover:underline text-slate-400">/</button>`;
+      let acc = "";
+      parts.forEach((p, idx) => {
+        acc += "/" + p;
+        const cur = acc;
+        crumbHtml += `<span class="text-slate-300">/</span><button onclick="drillFolder('${cur}', false)" class="hover:underline ${idx === parts.length-1 ? 'text-sky-700 font-bold' : ''}">${p}</button>`;
+      });
+      breadcrumb.innerHTML = crumbHtml;
+
+      try {
+        const res = await fetch(`/api/folder_drill?path=${encodeURIComponent(targetPath)}&refresh=${forceRefresh ? '1' : '0'}`);
+        const data = await res.json();
+        if (data.error) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-rose-500 font-mono">${data.error}</td></tr>`;
+          return;
+        }
+
+        if (data.cached) {
+          notice.textContent = "⚡ SQLite 日誌快取命中 (未被修改，瞬間載入)";
+          cachePill.classList.remove("hidden");
+          cachePill.classList.add("flex");
+        } else {
+          notice.textContent = "🔄 檔案已更新，已重新計算並寫入 SQLite 快取";
+          cachePill.classList.add("hidden");
+        }
+
+        summary.textContent = `共 ${data.items.length} 個項目 (包含 ${data.dir_count || 0} 個資料夾、${data.file_count || 0} 個檔案) | 當前層級檔案大小: ${data.total_size_formatted}`;
+
+        tbody.innerHTML = "";
+        if (data.items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 font-mono">此目錄為空</td></tr>`;
+          return;
+        }
+
+        data.items.forEach(item => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-50 transition";
+          const pct = (!item.is_dir && data.total_size > 0) ? ((item.size / data.total_size) * 100).toFixed(1) : 0;
+          const encPath = encodeURIComponent(item.path);
+
+          tr.innerHTML = `
+            <td class="py-2 px-3 font-semibold text-slate-800">
+              ${item.is_dir 
+                ? `<div onclick="drillFolder('${item.path}', false)" class="flex items-center space-x-2 cursor-pointer hover:text-sky-700">
+                     <i class="ph-bold ph-folder text-amber-500 text-base"></i>
+                     <span class="truncate max-w-md" title="${item.path}">${item.name}</span>
+                   </div>`
+                : `<div class="flex items-center space-x-2">
+                     <i class="ph-bold ph-file text-slate-400 text-base"></i>
+                     <a href="javascript:void(0)" onclick="openFileNative('${encPath}', 'open')" class="truncate max-w-md hover:text-sky-600 hover:underline flex items-center space-x-1" title="點擊直接打開此檔案">
+                       <span>${item.name}</span>
+                       <i class="ph-bold ph-arrow-square-out text-sky-500 text-[11px]"></i>
+                     </a>
+                   </div>`
+              }
+            </td>
+            <td class="py-2 px-3 text-slate-500">${item.is_dir ? '資料夾' : item.file_type}</td>
+            <td class="py-2 px-3 text-right font-bold text-slate-800">${item.size_formatted}</td>
+            <td class="py-2 px-3">
+              ${item.is_dir ? `<span class="text-[11px] text-slate-400 italic font-mono">-</span>` : `
+              <div class="flex items-center space-x-2">
+                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-sky-500 h-1.5 rounded-full" style="width: ${pct}%"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 w-8 text-right">${pct}%</span>
+              </div>`}
+            </td>
+            <td class="py-2 px-3 text-center space-x-1 whitespace-nowrap">
+              ${item.is_dir 
+                ? `<button onclick="drillFolder('${item.path}', false)" class="px-2 py-0.5 text-[11px] bg-sky-50 text-sky-700 hover:bg-sky-100 rounded">進入細分</button>` 
+                : `<button onclick="openFileNative('${encPath}', 'reveal')" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded">Finder 定位</button>`
+              }
+              <button onclick="setAsDeepTarget('${item.path}')" class="px-2 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded">圖表統計</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-rose-500 font-mono">載入失敗: ${e.message}</td></tr>`;
+      }
+    }
+
+    function drillCurrentFolder(force) {
+      drillFolder(currentDrillPath, force);
+    }
+
+    function navigateUp() {
+      const parts = currentDrillPath.split("/").filter(Boolean);
+      if (parts.length > 0) {
+        parts.pop();
+        const parent = "/" + parts.join("/");
+        drillFolder(parent || "/", false);
+      }
+    }
+
+    function setAsDeepTarget(p) {
+      document.getElementById("deepTargetInput").value = p;
+      switchTab("tab-pro");
+      triggerDeepAnalysis();
+    }
+
+    // 重複比對
+    function selectScanMode(mode) {
+      const radioCross = document.querySelector('input[name="scan_mode"][value="cross_folder"]');
+      const radioSingle = document.querySelector('input[name="scan_mode"][value="single_folder"]');
+      const labelCross = document.getElementById("label-mode-cross");
+      const labelSingle = document.getElementById("label-mode-single");
+      const wrapperPathB = document.getElementById("wrapperPathB");
+      const wrapperPriority = document.getElementById("wrapperPriority");
+      const labelPathA = document.getElementById("labelPathA");
+
+      if (mode === "cross_folder") {
+        radioCross.checked = true;
+        labelCross.classList.add("border-sky-600", "bg-sky-50/40");
+        labelSingle.classList.remove("border-sky-600", "bg-sky-50/40");
+        wrapperPathB.classList.remove("hidden");
+        wrapperPriority.classList.add("hidden");
+        labelPathA.textContent = "待清理目錄 (Path A)";
+      } else {
+        radioSingle.checked = true;
+        labelSingle.classList.add("border-sky-600", "bg-sky-50/40");
+        labelCross.classList.remove("border-sky-600", "bg-sky-50/40");
+        wrapperPathB.classList.add("hidden");
+        wrapperPriority.classList.remove("hidden");
+        labelPathA.textContent = "目標搜尋目錄 (單一根目錄)";
+      }
+    }
+
+    async function startDuplicateScan() {
+      const mode = document.querySelector('input[name="scan_mode"]:checked').value;
+      const pathA = document.getElementById("inputPathA").value;
+      const pathB = document.getElementById("inputPathB").value;
+      const minSize = document.getElementById("minSizeSelect").value;
+      const verifyHash = document.getElementById("verifyHashSelect").value === "true";
+      const priorityStr = document.getElementById("priorityInput").value;
+
+      const progressCard = document.getElementById("scanProgressCard");
+      const resultsCard = document.getElementById("resultsCard");
+      const btnStart = document.getElementById("btnStartScan");
+
+      progressCard.classList.remove("hidden");
+      resultsCard.classList.add("hidden");
+      btnStart.disabled = true;
+
+      try {
+        const res = await fetch("/api/start_scan", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            mode: mode,
+            path_a: pathA,
+            path_b: pathB,
+            min_size_bytes: parseInt(minSize),
+            verify_hash: verifyHash,
+            priority_str: priorityStr
+          })
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert("掃描失敗: " + data.error);
+          progressCard.classList.add("hidden");
+          btnStart.disabled = false;
+          return;
+        }
+        pollTaskStatus(data.task_id);
+      } catch (err) {
+        alert("請求發送錯誤: " + err.message);
+        progressCard.classList.add("hidden");
+        btnStart.disabled = false;
+      }
+    }
+
+    function pollTaskStatus(taskId) {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/task_status?task_id=${taskId}`);
+          const task = await res.json();
+          currentTask = task;
+
+          document.getElementById("scanProgressBar").style.width = `${task.percent || 0}%`;
+          document.getElementById("scanPercentText").textContent = `${task.percent || 0}%`;
+          document.getElementById("scanStatusText").innerHTML = `<i class="ph-bold ph-spinner-gap animate-spin"></i><span>${task.progress}</span>`;
+
+          if (task.status === "completed") {
+            clearInterval(pollInterval);
+            document.getElementById("scanProgressCard").classList.add("hidden");
+            document.getElementById("btnStartScan").disabled = false;
+            renderDuplicateResults(task);
+          } else if (task.status === "error") {
+            clearInterval(pollInterval);
+            alert("掃描發生錯誤: " + task.error);
+            document.getElementById("scanProgressCard").classList.add("hidden");
+            document.getElementById("btnStartScan").disabled = false;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, 800);
+    }
+
+    function renderDuplicateResults(task) {
+      duplicateResults = [];
+      selectedFilePaths.clear();
+
+      task.duplicate_groups.forEach(g => {
+        g.duplicates.forEach(dupPath => {
+          duplicateResults.push({
+            filename: g.filename,
+            size: g.size,
+            size_formatted: g.size_formatted,
+            keep_file: g.keep_file,
+            delete_file: dupPath
+          });
+          selectedFilePaths.add(dupPath);
+        });
+      });
+
+      document.getElementById("resultsSummaryText").innerHTML = `
+        共檢測出 <strong>${task.duplicate_groups.length.toLocaleString()}</strong> 組重複檔案，
+        包含 <strong>${task.total_duplicate_files.toLocaleString()}</strong> 個可清理副本，
+        預估可釋放 <strong class="text-rose-600 font-bold">${task.total_wasted_formatted}</strong>
+      `;
+
+      currentPage = 1;
+      updateResultsTable();
+      document.getElementById("resultsCard").classList.remove("hidden");
+    }
+
+    function updateResultsTable() {
+      const tbody = document.getElementById("resultsTableBody");
+      tbody.innerHTML = "";
+
+      const start = (currentPage - 1) * pageSize;
+      const end = Math.min(start + pageSize, duplicateResults.length);
+      const pageItems = duplicateResults.slice(start, end);
+
+      document.getElementById("pageStartText").textContent = duplicateResults.length === 0 ? 0 : start + 1;
+      document.getElementById("pageEndText").textContent = end;
+      document.getElementById("pageTotalText").textContent = duplicateResults.length;
+      document.getElementById("selectedCountText").textContent = selectedFilePaths.size;
+
+      const totalPages = Math.ceil(duplicateResults.length / pageSize) || 1;
+      document.getElementById("pageNumberText").textContent = `${currentPage} / ${totalPages}`;
+      document.getElementById("btnPrevPage").disabled = currentPage <= 1;
+      document.getElementById("btnNextPage").disabled = currentPage >= totalPages;
+
+      pageItems.forEach(item => {
+        const isChecked = selectedFilePaths.has(item.delete_file);
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+          <td class="py-2 px-3 text-center">
+            <input type="checkbox" onchange="toggleItemSelection('${encodeURIComponent(item.delete_file)}', this.checked)" ${isChecked ? 'checked' : ''}>
+          </td>
+          <td class="py-2 px-3 font-semibold text-slate-800">${item.filename}</td>
+          <td class="py-2 px-3 text-slate-600">${item.size_formatted}</td>
+          <td class="py-2 px-3 text-rose-700 max-w-xs truncate" title="${item.delete_file}">${item.delete_file}</td>
+          <td class="py-2 px-3 text-emerald-700 max-w-xs truncate" title="${item.keep_file}">${item.keep_file}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleItemSelection(encodedPath, checked) {
+      const p = decodeURIComponent(encodedPath);
+      if (checked) selectedFilePaths.add(p);
+      else selectedFilePaths.delete(p);
+      document.getElementById("selectedCountText").textContent = selectedFilePaths.size;
+    }
+
+    function toggleSelectAll(checked) {
+      if (checked) {
+        duplicateResults.forEach(r => selectedFilePaths.add(r.delete_file));
+      } else {
+        selectedFilePaths.clear();
+      }
+      updateResultsTable();
+    }
+
+    function changePage(delta) {
+      currentPage += delta;
+      updateResultsTable();
+    }
+
+    function exportCSV() {
+      if (!currentTask) return;
+      window.location.href = `/api/export_csv?task_id=current`;
+    }
+
+    function openCleanModal() {
+      if (selectedFilePaths.size === 0) {
+        alert("請至少選取一個檔案進行清理！");
+        return;
+      }
+      let totalBytes = 0;
+      duplicateResults.forEach(r => {
+        if (selectedFilePaths.has(r.delete_file)) {
+          totalBytes += r.size;
+        }
+      });
+
+      document.getElementById("modalSelectedCount").textContent = selectedFilePaths.size.toLocaleString();
+      document.getElementById("modalSelectedSize").textContent = formatBytes(totalBytes);
+      document.getElementById("cleanModal").classList.remove("hidden");
+    }
+
+    function closeCleanModal() {
+      document.getElementById("cleanModal").classList.add("hidden");
+    }
+
+    async function executeConfirmedClean() {
+      const mode = document.querySelector('input[name="clean_target_mode"]:checked').value;
+      const cleanEmpty = document.getElementById("cleanEmptyDirsCheckbox").checked;
+      const pathA = document.getElementById("inputPathA").value;
+      const files = Array.from(selectedFilePaths);
+
+      const btn = document.getElementById("btnConfirmClean");
+      btn.disabled = true;
+      btn.textContent = "執行清理中...";
+
+      try {
+        const res = await fetch("/api/execute_clean", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            files: files,
+            mode: mode,
+            clean_empty_dirs: cleanEmpty,
+            root_clean: pathA
+          })
+        });
+        const result = await res.json();
+        closeCleanModal();
+        alert(`清理完成！\n已處理: ${result.deleted_count} 個\n釋放空間: ${result.freed_formatted}\n移除空目錄: ${result.empty_dirs_removed} 個`);
+
+        loadVolumes();
+        drillFolder(currentDrillPath, true);
+        document.getElementById("resultsCard").classList.add("hidden");
+      } catch (err) {
+        alert("清理失敗: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "確認執行";
+      }
+    }
+
+    function applyPreset(type) {
+      if (type === "preset_a") {
+        selectScanMode("cross_folder");
+        document.getElementById("inputPathA").value = "~/Pictures/MobileBackup";
+        document.getElementById("inputPathB").value = "~/Pictures/Photos_B";
+        switchTab("tab-duplicates");
+      } else if (type === "preset_b") {
+        selectScanMode("single_folder");
+        document.getElementById("inputPathA").value = "~/Pictures/MobileBackup";
+        switchTab("tab-duplicates");
+      }
+    }
+
+    // 全系統通用資料夾瀏覽器
+    let parentBrowsePath = null;
+    async function browseDir(target) {
+      browseTarget = target;
+      let initPath = "~/Pictures";
+      if (target === "deep") initPath = document.getElementById("deepTargetInput").value;
+      else if (target === "pathA") initPath = document.getElementById("inputPathA").value;
+      else if (target === "pathB") initPath = document.getElementById("inputPathB").value;
+
+      currentBrowse = initPath || "~/Pictures";
+      document.getElementById("browseModal").classList.remove("hidden");
+      loadBrowsePath(currentBrowse);
+    }
+
+    function closeBrowseModal() {
+      document.getElementById("browseModal").classList.add("hidden");
+    }
+
+    async function loadBrowsePath(path) {
+      currentBrowse = path;
+      document.getElementById("browseCurrentPath").textContent = path;
+      const listEl = document.getElementById("browseFolderList");
+      const btnUp = document.getElementById("btnModalUp");
+      listEl.innerHTML = `<div class="p-2 text-slate-400 font-mono">載入目錄中...</div>`;
+
+      try {
+        const res = await fetch(`/api/browse_fs?path=${encodeURIComponent(path)}`);
+        const data = await res.json();
+        listEl.innerHTML = "";
+        parentBrowsePath = data.parent;
+
+        btnUp.disabled = !parentBrowsePath;
+        btnUp.classList.toggle("opacity-50", !parentBrowsePath);
+
+        if (!data.dirs || data.dirs.length === 0) {
+          listEl.innerHTML = `<div class="p-2 text-slate-400 font-mono">此層無其他可展開子資料夾</div>`;
+          return;
+        }
+
+        data.dirs.forEach(d => {
+          const item = document.createElement("div");
+          item.className = "flex items-center space-x-2 p-1.5 hover:bg-slate-100 rounded cursor-pointer text-slate-700 font-mono";
+          item.innerHTML = `<i class="ph-bold ph-folder text-amber-500"></i><span class="truncate">${d}</span>`;
+          item.onclick = () => {
+            const next = path === "/" ? `/${d}` : `${path.replace(/\/+$/, '')}/${d}`;
+            loadBrowsePath(next);
+          };
+          listEl.appendChild(item);
+        });
+      } catch (e) {
+        listEl.innerHTML = `<div class="p-2 text-rose-500 font-mono">讀取失敗: ${e.message}</div>`;
+      }
+    }
+
+    function browseUp() {
+      if (parentBrowsePath) {
+        loadBrowsePath(parentBrowsePath);
+      }
+    }
+
+    function selectCurrentFolder() {
+      if (browseTarget === "deep") {
+        document.getElementById("deepTargetInput").value = currentBrowse;
+        triggerDeepAnalysis();
+      } else if (browseTarget === "pathA") {
+        document.getElementById("inputPathA").value = currentBrowse;
+      } else if (browseTarget === "pathB") {
+        document.getElementById("inputPathB").value = currentBrowse;
+      }
+      closeBrowseModal();
+    }
+
+    // Sources & Devices Functions
+    async function loadDevices() {
+      try {
+        const res = await fetch('/api/devices');
+        const list = await res.json();
+        const tbody = document.getElementById('sourcesDeviceTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        list.forEach(dev => {
+          const isPhone = dev.type === 'android' || dev.type === 'ios';
+          const actionButtons = isPhone
+            ? `<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800">ADB 已連線就緒</span>`
+            : `
+              <div class="flex justify-center space-x-1">
+                <button class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px]" onclick="drillFolder('${dev.path}', false); switchTab('tab-explorer');">📁 拆解</button>
+                <button class="px-2 py-0.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-[11px]" onclick="openLaunchModal('${dev.path}')">🚀 發射</button>
+              </div>
+            `;
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2 px-3 text-base">${dev.icon}</td>
+              <td class="py-2 px-3 font-semibold text-slate-800">${dev.name}</td>
+              <td class="py-2 px-3 text-slate-500 text-[11px]">${dev.path || dev.id}</td>
+              <td class="py-2 px-3 text-slate-600 text-[11px]">${dev.detail || dev.status}</td>
+              <td class="py-2 px-3 text-center">${actionButtons}</td>
+            </tr>
+          `;
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function openLaunchModal(defaultPath) {
+      document.getElementById('launchSourceInput').value = defaultPath || '';
+      document.getElementById('launchModal').classList.remove('hidden');
+    }
+
+    function closeLaunchModal() {
+      document.getElementById('launchModal').classList.add('hidden');
+    }
+
+    async function submitLaunchTask() {
+      const source = document.getElementById('launchSourceInput').value.trim();
+      const device = document.getElementById('launchDeviceSelect').value;
+      const batchGb = parseFloat(document.getElementById('launchBatchSelect').value);
+
+      if (!source) {
+        alert('請填寫來源路徑！');
+        return;
+      }
+
+      const res = await fetch('/api/relay/start_task', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          source_path: source,
+          device_serial: device,
+          batch_gb: batchGb,
+          delete_source: false
+        })
+      });
+
+      const d = await res.json();
+      if (d.success) {
+        alert(d.msg);
+        closeLaunchModal();
+        switchTab('tab-pixel');
+      } else {
+        alert('啟動失敗：' + d.error);
+      }
+    }
+
+    // Cloud & Albums Functions
+    async function loadRcloneRemotes() {
+      try {
+        const res = await fetch('/api/rclone/remotes');
+        const list = await res.json();
+        const tbody = document.getElementById('rcloneTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        list.forEach(r => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2 px-3 font-semibold text-slate-800 flex items-center space-x-1.5">
+                <span>${r.icon}</span>
+                <span>${r.name}</span>
+              </td>
+              <td class="py-2 px-3 text-slate-600">${r.type}</td>
+              <td class="py-2 px-3 text-slate-500 text-[11px]">your-secondary@gmail.com</td>
+              <td class="py-2 px-3 text-center">
+                <button class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px]" onclick="rcloneAction('${r.name}:', 'cleanup')">🧹 清空垃圾桶</button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadAlbums() {
+      const container = document.getElementById('albumsGrid');
+      if (!container) return;
+      container.innerHTML = '<div class="p-4 text-center text-slate-400 font-mono col-span-4">正在載入 Google 相簿清單...</div>';
+      try {
+        const res = await fetch('/api/gphotos/albums');
+        const data = await res.json();
+        if (data.success && data.albums) {
+          container.innerHTML = '';
+          data.albums.forEach(alb => {
+            const cover = alb.coverPhotoBaseUrl ? `<img src="${alb.coverPhotoBaseUrl}=w300-h200-c" class="w-full h-24 object-cover rounded mb-1.5">` : '<div class="h-24 bg-slate-100 rounded flex items-center justify-center text-xl mb-1.5">🖼️</div>';
+            container.innerHTML += `
+              <div class="border border-slate-200 rounded-lg p-2.5 bg-slate-50 hover:bg-white transition shadow-xs">
+                ${cover}
+                <div class="font-bold text-slate-800 truncate text-[11px]">${alb.title || '未命名相簿'}</div>
+                <div class="text-[10px] text-slate-400 font-mono">${alb.mediaItemsCount || 0} 個項目</div>
+              </div>
+            `;
+          });
+        } else {
+          container.innerHTML = `<div class="p-4 text-center text-rose-500 font-mono col-span-4">${data.error || '無法取得相簿'}</div>`;
+        }
+      } catch (e) {
+        container.innerHTML = `<div class="p-4 text-center text-rose-500 font-mono col-span-4">網路錯誤</div>`;
+      }
+    }
+
+    async function rcloneAction(remote, action) {
+      if (!confirm(`確定對 ${remote} 執行 ${action} 嗎？`)) return;
+      const res = await fetch('/api/rclone/action', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({remote, action})
+      });
+      const d = await res.json();
+      alert(d.msg || (d.success ? '成功' : d.error));
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+  </script>
+</body>
+</html>
