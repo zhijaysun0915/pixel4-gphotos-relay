@@ -868,8 +868,9 @@
       <div class="header-title" id="pageTitle">
         <span>🏠</span> 設備與數據總覽
       </div>
-      <div style="display:flex; align-items:center; gap:1rem;">
-        <span class="device-pill" id="headerDevicePill">📱 Google Pixel 5 / Pixel 4 (USB ADB)</span>
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <button id="headerAcctPill" onclick="openConfigModal()" style="border:1px solid #bae6fd; background:#f0f9ff; color:#0369a1; border-radius:999px; padding:0.35rem 0.85rem; font-size:0.78rem; font-weight:700; cursor:pointer;">👤 帳號: 點此輸入</button>
+        <span class="device-pill" id="headerDevicePill">📱 Google Pixel 4 / Pixel 5 (USB ADB)</span>
         <button class="btn btn-primary" style="padding:0.4rem 0.8rem;" onclick="openConfigModal()">⚙️ 帳號與檔案範圍</button>
         <button class="btn btn-outline" style="padding:0.4rem 0.8rem;" onclick="refreshAll()">🔄 重新整理</button>
       </div>
@@ -891,7 +892,7 @@
             </div>
             <div class="phone-meta">
               <div class="phone-meta-row"><span>中繼特權:</span><strong style="color:var(--success);">0-Byte 永久無限空間</strong></div>
-              <div class="phone-meta-row"><span>目標帳號:</span><strong>your-primary@gmail.com</strong></div>
+              <div class="phone-meta-row"><span>目標帳號:</span><strong id="dispPrimaryAcct" style="cursor:pointer;color:#0284c7;" onclick="openConfigModal()">點此輸入帳號</strong></div>
               <div class="phone-meta-row"><span>API 配額限制:</span><span style="color:#0284c7;">完全豁免 (無 1 萬檔/天上限)</span></div>
               <div class="phone-meta-row"><span>螢幕狀態:</span><span>低溫低耗電保持喚醒</span></div>
             </div>
@@ -901,7 +902,7 @@
           <div class="quick-actions-panel">
             <div class="storage-bar-group">
               <div class="storage-header">
-                <div class="storage-title">外接硬碟空間釋放 (Mac 本機 / 外接硬碟)</div>
+                <div class="storage-title">儲存空間與中繼進度 (Windows / Mac / 外接硬碟)</div>
                 <div class="storage-detail" id="driveDetail">可用 419 GB / 總量 954 GB</div>
               </div>
               <div class="segmented-bar">
@@ -925,7 +926,7 @@
               <div class="action-tile" onclick="navTab('sharing')">
                 <div class="action-tile-icon">🤝</div>
                 <div class="action-tile-title">共享相簿轉移</div>
-                <div class="action-tile-desc">將 secondary-account 免下載直接轉存至 primary-account</div>
+                <div class="action-tile-desc" id="dispPartnerDesc">將次要帳號免下載直接轉存至主要帳號</div>
               </div>
 
               <div class="action-tile" onclick="navTab('albums')">
@@ -1000,7 +1001,7 @@
                 <span id="tkRunBadge" style="background:#dcfce7; color:#166534; font-size:0.75rem; font-weight:700; padding:0.25rem 0.6rem; border-radius:20px; border:1px solid #86efac;">● 運轉中</span>
               </div>
               <div style="font-size:0.85rem; color:#64748b; margin-top:0.25rem;">
-                零配額永久上傳 (Storage Saver 0-Byte) ➔ 目標帳號：<code>your-primary@gmail.com</code>
+                零配額永久上傳 (Storage Saver 0-Byte) ➔ 目標帳號：<code id="dispTargetAcct" style="cursor:pointer;" onclick="openConfigModal()">尚未設定（點此輸入）</code>
               </div>
             </div>
             <div style="display:flex; gap:0.75rem; align-items:center;">
@@ -2376,19 +2377,28 @@
 
   <!-- Flexible Account & File Scope Config Modal -->
   <div id="configModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
-    <div style="background:#fff; border-radius:16px; max-width:720px; width:100%; max-height:90vh; overflow-y:auto; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,0.25);">
+    <div style="background:#fff; border-radius:16px; max-width:740px; width:100%; max-height:90vh; overflow-y:auto; padding:1.5rem; box-shadow:0 20px 50px rgba(0,0,0,0.25);">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:0.75rem; margin-bottom:1rem;">
-        <h3 style="font-size:1.1rem; font-weight:800; color:#0f172a;">⚙️ 帳號資訊與檔案範圍彈性設定 (Windows / Mac / iPhone / Pixel 4)</h3>
+        <h3 style="font-size:1.08rem; font-weight:800; color:#0f172a;">⚙️ 帳號輸入與檔案範圍彈性設定 (Windows / Mac / iPhone / Pixel 4)</h3>
         <button onclick="document.getElementById('configModal').style.display='none'" style="border:none; background:#f1f5f9; border-radius:8px; padding:0.35rem 0.7rem; cursor:pointer; font-weight:700;">✕</button>
+      </div>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem; align-items:center;">
+        <span style="font-size:0.78rem; color:#64748b; font-weight:600;">作業系統路徑快速套用：</span>
+        <button type="button" onclick="applyOsPreset('windows')" class="btn btn-outline" style="padding:0.3rem 0.7rem; font-size:0.78rem;">🪟 Windows 範例路徑</button>
+        <button type="button" onclick="applyOsPreset('mac')" class="btn btn-outline" style="padding:0.3rem 0.7rem; font-size:0.78rem;">🍎 macOS 範例路徑</button>
       </div>
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:0.85rem; margin-bottom:1rem;">
         <div>
-          <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">主要 Google 相簿帳號 (Pixel 4 備份目標)</label>
-          <input id="cfgPrimaryAcct" type="text" placeholder="your-primary@gmail.com" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
+          <label style="font-size:0.78rem; color:#0f172a; font-weight:700; display:block; margin-bottom:4px;">主要 Google 相簿帳號 * (請自行輸入)</label>
+          <input id="cfgPrimaryAcct" type="text" placeholder="例如: my.photos@gmail.com" style="width:100%; padding:0.5rem; border:1px solid #94a3b8; border-radius:8px;" />
         </div>
         <div>
-          <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">來源 / 次要 Google 帳號 (選填)</label>
-          <input id="cfgSecondaryAcct" type="text" placeholder="your-secondary@gmail.com" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
+          <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">次要 / 來源 Google 帳號 (選填)</label>
+          <input id="cfgSecondaryAcct" type="text" placeholder="例如: old.photos@gmail.com" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
+        </div>
+        <div>
+          <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Google Drive rclone 遠端名稱 (選填)</label>
+          <input id="cfgRcloneRemote" type="text" placeholder="gdrive_primary" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
         </div>
         <div>
           <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">Pixel 裝置序號 (auto 自動偵測 Pixel 4/5)</label>
@@ -2396,7 +2406,11 @@
         </div>
         <div>
           <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">預設瀏覽路徑 (Windows: D:\Photos / Mac: ~)</label>
-          <input id="cfgBrowsePath" type="text" placeholder="~" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
+          <input id="cfgBrowsePath" type="text" placeholder="D:\Photos 或 ~/Pictures" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
+        </div>
+        <div>
+          <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">iPhone 匯入資料夾路徑</label>
+          <input id="cfgIphonePath" type="text" placeholder="C:\Users\Name\Pictures\iPhone_Import" style="width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:8px;" />
         </div>
         <div>
           <label style="font-size:0.78rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">檔案起始日期 (留空不限)</label>
@@ -2427,25 +2441,80 @@
       </div>
       <div style="display:flex; flex-wrap:wrap; gap:0.75rem; justify-content:flex-end;">
         <button onclick="downloadConfigJson()" class="btn btn-outline">⬇️ 下載 config.json</button>
-        <button onclick="saveConfigModal()" class="btn btn-primary">💾 儲存設定</button>
+        <button onclick="saveConfigModal()" class="btn btn-primary">💾 套用並儲存帳號與範圍</button>
       </div>
     </div>
   </div>
   <script>
     let _loadedAppConfig = null;
-    async function openConfigModal() {
+    const STORAGE_KEY = 'pixel4_relay_user_config_v1';
+
+    function applyOsPreset(osType) {
+      if (osType === 'windows') {
+        document.getElementById('cfgBrowsePath').value = 'D:\\Photos';
+        document.getElementById('cfgIphonePath').value = 'C:\\Users\\YourName\\Pictures\\iPhone_Import';
+      } else {
+        document.getElementById('cfgBrowsePath').value = '~/Pictures/ToGooglePhotos';
+        document.getElementById('cfgIphonePath').value = '~/Pictures/iPhone_Import';
+      }
+    }
+
+    function applyAccountToUI(cfg) {
+      if (!cfg) return;
+      const a = cfg.account || {};
+      const primary = (a.primary_google_account || '').trim();
+      const secondary = (a.secondary_google_account || '').trim();
+      const isPlaceholder = !primary || primary === 'your-primary@gmail.com';
+      const dispPrimary = isPlaceholder ? '尚未設定（點此輸入帳號）' : primary;
+      const pill = document.getElementById('headerAcctPill');
+      if (pill) pill.innerText = isPlaceholder ? '👤 點此輸入 Google 帳號' : `👤 ${primary}`;
+      const elP = document.getElementById('dispPrimaryAcct');
+      if (elP) elP.innerText = dispPrimary;
+      const elT = document.getElementById('dispTargetAcct');
+      if (elT) elT.innerText = dispPrimary;
+      const elD = document.getElementById('dispPartnerDesc');
+      if (elD) {
+        if (!isPlaceholder && secondary && secondary !== 'your-secondary@gmail.com') {
+          elD.innerText = `將 ${secondary} 免下載直接轉存至 ${primary}`;
+        } else {
+          elD.innerText = '將次要帳號免下載直接轉存至主要帳號（可於設定自訂）';
+        }
+      }
+    }
+
+    async function initUserConfig() {
+      let cfg = null;
+      try {
+        const localSaved = localStorage.getItem(STORAGE_KEY);
+        if (localSaved) cfg = JSON.parse(localSaved);
+      } catch (e) {}
       try {
         const res = await fetch('/api/config');
-        _loadedAppConfig = await res.json();
-      } catch (e) {
-        _loadedAppConfig = _loadedAppConfig || { account: {}, sources: [], scope: {} };
+        if (res.ok) {
+          const srvCfg = await res.json();
+          if (!cfg || (srvCfg.account && srvCfg.account.primary_google_account && srvCfg.account.primary_google_account !== 'your-primary@gmail.com')) {
+            cfg = srvCfg;
+          }
+        }
+      } catch (e) {}
+      if (cfg) {
+        _loadedAppConfig = cfg;
+        applyAccountToUI(cfg);
       }
-      const a = _loadedAppConfig.account || {};
-      const s = _loadedAppConfig.scope || {};
-      document.getElementById('cfgPrimaryAcct').value = a.primary_google_account || 'your-primary@gmail.com';
-      document.getElementById('cfgSecondaryAcct').value = a.secondary_google_account || 'your-secondary@gmail.com';
+    }
+
+    async function openConfigModal() {
+      if (!_loadedAppConfig) await initUserConfig();
+      const cfg = _loadedAppConfig || { account: {}, sources: [], scope: {} };
+      const a = cfg.account || {};
+      const s = cfg.scope || {};
+      const iphoneSrc = (cfg.sources || []).find(x => x.type === 'iphone_import');
+      document.getElementById('cfgPrimaryAcct').value = (a.primary_google_account && a.primary_google_account !== 'your-primary@gmail.com') ? a.primary_google_account : '';
+      document.getElementById('cfgSecondaryAcct').value = (a.secondary_google_account && a.secondary_google_account !== 'your-secondary@gmail.com') ? a.secondary_google_account : '';
+      document.getElementById('cfgRcloneRemote').value = a.rclone_primary_remote || 'gdrive_primary';
       document.getElementById('cfgDeviceSerial').value = a.device_serial || 'auto';
-      document.getElementById('cfgBrowsePath').value = s.default_browse_path || '~';
+      document.getElementById('cfgBrowsePath').value = s.default_browse_path || (navigator.platform.toLowerCase().includes('win') ? 'D:\\Photos' : '~/Pictures/ToGooglePhotos');
+      document.getElementById('cfgIphonePath').value = (iphoneSrc && iphoneSrc.path) || (navigator.platform.toLowerCase().includes('win') ? 'C:\\Users\\YourName\\Pictures\\iPhone_Import' : '~/Pictures/iPhone_Import');
       document.getElementById('cfgDateFrom').value = s.date_from || '';
       document.getElementById('cfgDateTo').value = s.date_to || '';
       document.getElementById('cfgBatchGb').value = s.batch_size_gb ?? 15;
@@ -2457,17 +2526,27 @@
       document.getElementById('cfgExclude').value = (s.exclude_patterns || ['.DS_Store','Thumbs.db','@eaDir','.Trash','Thumbnails']).join(', ');
       document.getElementById('configModal').style.display = 'flex';
     }
+
     function buildAppConfigFromModal() {
       const base = _loadedAppConfig || { sources: [] };
+      const primary = document.getElementById('cfgPrimaryAcct').value.trim();
+      const secondary = document.getElementById('cfgSecondaryAcct').value.trim();
+      const browsePath = document.getElementById('cfgBrowsePath').value.trim() || '~';
+      const iphonePath = document.getElementById('cfgIphonePath').value.trim() || '~/Pictures/iPhone_Import';
       base.account = {
         ...(base.account || {}),
-        primary_google_account: document.getElementById('cfgPrimaryAcct').value.trim() || 'your-primary@gmail.com',
-        secondary_google_account: document.getElementById('cfgSecondaryAcct').value.trim() || '',
+        primary_google_account: primary,
+        secondary_google_account: secondary,
+        rclone_primary_remote: document.getElementById('cfgRcloneRemote').value.trim() || 'gdrive_primary',
         device_serial: document.getElementById('cfgDeviceSerial').value.trim() || 'auto',
       };
+      base.sources = [
+        { name: "Windows / Mac 本機照片", type: "mac_folder", path: browsePath, enabled: true },
+        { name: "iPhone 匯入資料夾", type: "iphone_import", path: iphonePath, enabled: true },
+      ];
       base.scope = {
         ...(base.scope || {}),
-        default_browse_path: document.getElementById('cfgBrowsePath').value.trim() || '~',
+        default_browse_path: browsePath,
         date_from: document.getElementById('cfgDateFrom').value,
         date_to: document.getElementById('cfgDateTo').value,
         batch_size_gb: parseFloat(document.getElementById('cfgBatchGb').value) || 15,
@@ -2480,17 +2559,23 @@
       };
       return base;
     }
+
     async function saveConfigModal() {
       const cfg = buildAppConfigFromModal();
+      _loadedAppConfig = cfg;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); } catch (e) {}
+      applyAccountToUI(cfg);
       try {
         const res = await fetch('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(cfg) });
         const d = await res.json();
-        alert(d.msg || '設定已儲存！');
+        alert(d.msg || '帳號與範圍設定已套用！');
         document.getElementById('configModal').style.display = 'none';
       } catch (e) {
-        alert('目前為靜態展示模式，請點擊「下載 config.json」並放入本機資料夾！');
+        alert('帳號與範圍已套用至瀏覽器！若要在本機執行，請點「下載 config.json」並放入專案資料夾。');
+        document.getElementById('configModal').style.display = 'none';
       }
     }
+
     function downloadConfigJson() {
       const cfg = buildAppConfigFromModal();
       const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
@@ -2499,6 +2584,8 @@
       a.download = 'config.json';
       a.click();
     }
+
+    window.addEventListener('DOMContentLoaded', initUserConfig);
   </script>
 </body>
 </html>
