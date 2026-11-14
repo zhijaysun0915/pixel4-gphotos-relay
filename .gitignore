@@ -1,0 +1,10 @@
+# Personal configuration & runtime state (keep private!)
+config.json
+*.db
+*.db-journal
+*.log
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/

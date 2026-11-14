@@ -1,0 +1,55 @@
+{
+  "account": {
+    "google_account_label": "your.account@gmail.com",
+    "device_serial": "auto",
+    "device_model_hint": "Pixel 4"
+  },
+  "sources": [
+    {
+      "name": "Mac 本機照片 (Mac Pictures)",
+      "type": "mac_folder",
+      "path": "~/Pictures/ToGooglePhotos",
+      "enabled": true
+    },
+    {
+      "name": "iPhone 匯入資料夾 (iPhone Import)",
+      "type": "iphone_import",
+      "path": "~/Pictures/iPhone_Import",
+      "enabled": true
+    },
+    {
+      "name": "外接硬碟 / NAS 掛載 (External Drive)",
+      "type": "external_drive",
+      "path": "/Volumes/MyDrive/Photos",
+      "enabled": false
+    }
+  ],
+  "scope": {
+    "date_from": "",
+    "date_to": "",
+    "include_photos": true,
+    "include_videos": true,
+    "include_raw": false,
+    "custom_extensions": [],
+    "exclude_patterns": [
+      ".DS_Store",
+      "Thumbs.db",
+      "@eaDir",
+      ".Trash",
+      "Thumbnails"
+    ],
+    "min_file_size_kb": 1,
+    "max_file_size_mb": 0
+  },
+  "relay": {
+    "batch_size_gb": 15.0,
+    "min_free_gb": 12.0,
+    "delete_source_after_push": false,
+    "auto_clean_camera_after_backup": true,
+    "clean_source_junk_files": false,
+    "staging_dir": "/sdcard/Download/PixelStaging",
+    "camera_dir": "/sdcard/DCIM/Camera",
+    "adb_path": "auto",
+    "poll_interval_sec": 15
+  }
+}

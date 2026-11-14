@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pixel 4 無限 Google 相簿中繼站 | iPhone &amp; Mac ➔ Pixel 4</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card: #131c31;
+      --border: #263554;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #34d399;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: radial-gradient(circle at top, #172554 0%, var(--bg) 45%);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 36px 20px 80px; }
+    .hero { text-align: center; padding: 24px 0 36px; }
+    .pill {
+      display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.82rem;
+      background: rgba(56,189,248,0.14); color: var(--accent); border: 1px solid rgba(56,189,248,0.35);
+      margin-bottom: 12px;
+    }
+    h1 { font-size: clamp(1.7rem, 3.2vw, 2.5rem); margin: 8px 0 12px; }
+    .lead { color: var(--muted); max-width: 720px; margin: 0 auto 24px; }
+    .cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px;
+      text-decoration: none; font-weight: 600; font-size: 0.92rem; border: none; cursor: pointer;
+    }
+    .btn-primary { background: var(--accent); color: #082f49; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-green { background: var(--green); color: #064e3b; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 22px; margin-bottom: 22px;
+    }
+    .card h2 { margin-top: 0; font-size: 1.2rem; }
+    .flow {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;
+      margin-top: 14px;
+    }
+    .step {
+      background: #0b1120; border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+    }
+    .step strong { color: var(--accent); display: block; margin-bottom: 4px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border);
+      background: #0b1120; color: var(--text); margin-bottom: 10px;
+    }
+    .checks { display: flex; flex-wrap: wrap; gap: 14px; margin: 6px 0 12px; font-size: 0.9rem; }
+    pre {
+      background: #020617; border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+      overflow-x: auto; font-size: 0.82rem; color: #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="pill">Open Source · Python 3.9+ 零依賴 · macOS + iPhone ➔ Pixel 4</div>
+      <h1>📸 Pixel 4 無限 Google 相簿中繼系統</h1>
+      <p class="lead">
+        將 <strong>iPhone 手機</strong>與 <strong>Mac 電腦</strong>的照片／影片自動分批中繼到 <strong>Pixel 4</strong>（或 Pixel 1–5），
+        透過 ADB 雙緩衝暫存與 UIAutomator 自動備份偵測，安全無痛享受 Google 相簿不計容量的無限空間備份。
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/zhijaysun0915/pixel4-gphotos-relay" target="_blank">⭐ 前往 GitHub 專案下載</a>
+        <a class="btn btn-outline" href="#builder">⚙️ 線上產生 config.json 設定檔</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🔄 系統運作流程（安全不爆空間設計）</h2>
+      <div class="flow">
+        <div class="step">
+          <strong>1. iPhone &amp; Mac 集中</strong>
+          iPhone 透過 iCloud 同步、AirDrop、PhotoSync 或 USB 匯入 Mac 指定資料夾，與 Mac 本機照片一起納入掃描範圍。
+        </div>
+        <div class="step">
+          <strong>2. 彈性範圍與帳號去重</strong>
+          依設定的 Google 帳號標籤、日期區間、檔案類型過濾，並由 SQLite 紀錄已同步檔案，切換帳號也不混淆。
+        </div>
+        <div class="step">
+          <strong>3. ADB 雙緩衝預載</strong>
+          先將安全批次容量（預設 15 GB）推送至 <code>PixelStaging/.nomedia</code>，避免 Google 相簿讀取到傳輸一半的檔案。
+        </div>
+        <div class="step">
+          <strong>4. 自動偵測備份並清空</strong>
+          移入 <code>DCIM/Camera</code> 觸發無限上傳；偵測 Google 相簿顯示「備份完成」後自動清空 Pixel 空間，接力下一批。
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="builder">
+      <h2>⚙️ 線上互動式設定產生器（保留帳號與檔案範圍彈性）</h2>
+      <p style="color:var(--muted); margin-top:-6px;">
+        填入你自己的帳號標籤、Mac / iPhone 來源路徑與篩選條件，即可直接下載專屬 <code>config.json</code>（所有設定僅在你的瀏覽器本地產生，不會上傳任何資料）。
+      </p>
+      <div class="grid-2">
+        <div>
+          <label>Google 相簿帳號標籤 (區分不同帳號的同步紀錄)</label>
+          <input type="text" id="bAcct" value="your.account@gmail.com" oninput="renderPreview()" />
+
+          <label>Mac 本機照片資料夾路徑</label>
+          <input type="text" id="bMacPath" value="~/Pictures/ToGooglePhotos" oninput="renderPreview()" />
+
+          <label>iPhone 匯入資料夾路徑 (AirDrop / Image Capture / PhotoSync)</label>
+          <input type="text" id="bIphonePath" value="~/Pictures/iPhone_Import" oninput="renderPreview()" />
+
+          <label>外接硬碟 / NAS 路徑 (選填，留空則不啟用)</label>
+          <input type="text" id="bExtPath" placeholder="/Volumes/MyDrive/Photos" oninput="renderPreview()" />
+        </div>
+        <div>
+          <label>起始日期 (留空代表不限)</label>
+          <input type="date" id="bFrom" oninput="renderPreview()" />
+
+          <label>結束日期 (留空代表不限)</label>
+          <input type="date" id="bTo" oninput="renderPreview()" />
+
+          <div class="grid-2" style="gap:10px;">
+            <div>
+              <label>單批推送上限 (GB)</label>
+              <input type="number" id="bBatch" value="15" min="1" step="0.5" oninput="renderPreview()" />
+            </div>
+            <div>
+              <label>Pixel 保留安全空間 (GB)</label>
+              <input type="number" id="bMinFree" value="12" min="2" step="0.5" oninput="renderPreview()" />
+            </div>
+          </div>
+
+          <div class="checks">
+            <label><input type="checkbox" id="bPhotos" checked onchange="renderPreview()" /> 照片</label>
+            <label><input type="checkbox" id="bVideos" checked onchange="renderPreview()" /> 影片</label>
+            <label><input type="checkbox" id="bRaw" onchange="renderPreview()" /> RAW</label>
+            <label><input type="checkbox" id="bDel" onchange="renderPreview()" /> 推送後刪除來源</label>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <button class="btn btn-green" onclick="downloadConfig()">⬇️ 下載 config.json</button>
+        <button class="btn btn-outline" onclick="copyConfig()">📋 複製 JSON 內容</button>
+      </div>
+      <pre id="jsonPreview"></pre>
+    </section>
+
+    <section class="card">
+      <h2>🚀 在 Mac 上 30 秒啟動本機控制台</h2>
+      <pre>git clone https://github.com/zhijaysun0915/pixel4-gphotos-relay.git
+cd pixel4-gphotos-relay
+# 將上方下載的 config.json 放入此資料夾（或啟動後直接在網頁修改）
+python3 app.py</pre>
+      <p style="color:var(--muted); margin-bottom:0;">
+        執行後會自動開啟 <code>http://localhost:8765</code> 本機控制台，即可查看 Pixel 4 連線、掃描預覽並一鍵開始備份。
+      </p>
+    </section>
+  </div>
+
+  <script>
+    function buildJson() {
+      const extPath = document.getElementById("bExtPath").value.trim();
+      return {
+        account: {
+          google_account_label: document.getElementById("bAcct").value.trim() || "your.account@gmail.com",
+          device_serial: "auto",
+          device_model_hint: "Pixel 4"
+        },
+        sources: [
+          { name: "Mac 本機照片", type: "mac_folder", path: document.getElementById("bMacPath").value.trim() || "~/Pictures", enabled: true },
+          { name: "iPhone 匯入資料夾", type: "iphone_import", path: document.getElementById("bIphonePath").value.trim() || "~/Pictures/iPhone_Import", enabled: true },
+          { name: "外接硬碟 / NAS", type: "external_drive", path: extPath || "/Volumes/MyDrive/Photos", enabled: !!extPath }
+        ],
+        scope: {
+          date_from: document.getElementById("bFrom").value,
+          date_to: document.getElementById("bTo").value,
+          include_photos: document.getElementById("bPhotos").checked,
+          include_videos: document.getElementById("bVideos").checked,
+          include_raw: document.getElementById("bRaw").checked,
+          custom_extensions: [],
+          exclude_patterns: [".DS_Store", "Thumbs.db", "@eaDir", ".Trash", "Thumbnails"],
+          min_file_size_kb: 1,
+          max_file_size_mb: 0
+        },
+        relay: {
+          batch_size_gb: parseFloat(document.getElementById("bBatch").value) || 15,
+          min_free_gb: parseFloat(document.getElementById("bMinFree").value) || 12,
+          delete_source_after_push: document.getElementById("bDel").checked,
+          auto_clean_camera_after_backup: true,
+          clean_source_junk_files: false,
+          staging_dir: "/sdcard/Download/PixelStaging",
+          camera_dir: "/sdcard/DCIM/Camera",
+          adb_path: "auto",
+          poll_interval_sec: 15
+        }
+      };
+    }
+
+    function renderPreview() {
+      document.getElementById("jsonPreview").textContent = JSON.stringify(buildJson(), null, 2);
+    }
+
+    function downloadConfig() {
+      const blob = new Blob([JSON.stringify(buildJson(), null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "config.json";
+      a.click();
+    }
+
+    function copyConfig() {
+      navigator.clipboard.writeText(JSON.stringify(buildJson(), null, 2));
+      alert("已複製 config.json 內容！");
+    }
+
+    renderPreview();
+  </script>
+</body>
+</html>
