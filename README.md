@@ -8,8 +8,10 @@
 這是一套支援 **Windows 10/11** 與 **macOS**、專為 **Google Pixel 4**（相容 Pixel 1–5）打造的 **Google Drive / Google 相簿無限空間中繼與磁碟分析網頁控制台**。  
 整合 **iPhone 手機**、**Windows / Mac 電腦與外接硬碟** 以及 **Google Drive (`rclone`)** 多來源資料，透過本機網頁介面（預設 `http://localhost:8989`）與雙緩衝 ADB 引擎，將照片與影片自動分批推送至 Pixel 4 完成 **0-Byte 無限空間備份**。
 
-> 🌐 **GitHub Pages 公開網頁（線上架構說明與 `config.json` 產生器）**：  
-> https://zhijaysun0915.github.io/pixel4-gphotos-relay/
+> 🌐 **GitHub Pages 公開網頁**：
+> - **相片搬遷監控看板（主控台）**：https://zhijaysun0915.github.io/pixel4-gphotos-relay/
+> - **Disk Analyzer Pro（磁碟分析與重複清理）**：https://zhijaysun0915.github.io/pixel4-gphotos-relay/disk_analyzer.html
+> - **Google 相簿管理專頁**：https://zhijaysun0915.github.io/pixel4-gphotos-relay/google_photos_manager.html
 
 ---
 
@@ -23,8 +25,9 @@
    - 先將安全批次容量（預設 `15~20 GB`）推入 `/sdcard/Download/PixelStaging`（含 `.nomedia` 隔離，避免 Google 相簿讀到傳輸一半的檔案）。
    - 透過 ADB `uiautomator` 偵測 Google 相簿畫面文字（同時支援**繁中 / 簡中 / 英文**：「備份完成 / Backup complete」），確認上傳完畢後自動清空 `/sdcard/DCIM/Camera` 再接力下一批。
    - **檔案範圍彈性過濾**：支援 `--date-from`、`--date-to`（日期區間）、`--no-photos` / `--no-videos` / `--include-raw`（媒體類型）、`--exclude`（排除關鍵字）、`--batch-gb` 與 `--delete-source`（預設安全保留來源）。
-3. **Disk Analyzer Pro 磁碟分析與重複檔案清理 (`static/disk_analyzer.html`)**
-   - SQLite 增量掃描快取，快速分析資料夾佔用空間、Top 100 大檔與跨資料夾 MD5 重複檔案比對。
+3. **Disk Analyzer Pro 磁碟分析與重複檔案清理 ([static/disk_analyzer.html](static/disk_analyzer.html) / [線上預覽](https://zhijaysun0915.github.io/pixel4-gphotos-relay/disk_analyzer.html))**
+   - 由側邊欄「💽 開啟 Disk Analyzer Pro ↗」直接進入（本機同時監聽 `http://localhost:8989/disk_analyzer.html` 與 `http://localhost:8998`）。
+   - SQLite 增量掃描快取，快速分析資料夾佔用空間、Top 100 大檔與跨資料夾 MD5 重複檔案比對（支援 Windows `explorer /select,` 與 macOS `Finder` 定位檔案）。
 
 ---
 

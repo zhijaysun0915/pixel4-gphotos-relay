@@ -823,23 +823,23 @@
             payload = (opts && opts.method === 'POST') ? { success: true, msg: '已套用至本瀏覽器！本機使用請點「下載 config.json」放入專案資料夾。' } : demoConfig;
           } else if (url.startsWith('/api/status') || url.startsWith('/api/pixel_status')) {
             payload = {
-              relay_running: true,
-              pixel: { connected: true, model: "Pixel 4", serial: "DEMO-PIXEL4", battery: "88%", free_gb: 42.5, total_gb: 64.0, camera_files: 12 },
+              relay_running: false,
+              pixel: { connected: false, model: "Pixel 4 / 5 (尚未連接本機)", serial: "--", battery: "--", free_gb: "--", total_gb: "--", camera_files: 0 },
               storage_matrix: [
-                { id: "win_mac", name: "Windows / Mac 本機照片", type: "local", icon: "💻", total_gb: 1000, used_gb: 380, free_gb: 620, percent: 38 },
-                { id: "iphone", name: "iPhone 匯入資料夾", type: "local", icon: "📱", total_gb: 256, used_gb: 112, free_gb: 144, percent: 43.8 },
-                { id: "gdrive_main", name: "Google Drive (Primary)", type: "cloud", icon: "☁️", total_gb: 2048, used_gb: 185, free_gb: 1863, percent: 9 },
-                { id: "pixel4", name: "Pixel 4 無限中繼緩衝", type: "device", icon: "⚡", total_gb: 64, used_gb: 21.5, free_gb: 42.5, percent: 33.6 }
+                { id: "win_mac", name: "Windows / Mac 本機磁碟 (範例)", type: "local", status: "範例", icon: "💻", total_gb: 1000, used_gb: 380, avail_gb: 620, percent_used: 38, state: "success" },
+                { id: "iphone", name: "iPhone 匯入資料夾 (範例)", type: "mobile", status: "範例", icon: "📱", total_gb: 256, used_gb: 112, avail_gb: 144, percent_used: 44, state: "normal" },
+                { id: "gdrive_main", name: "Google Drive 雲端 (範例)", type: "cloud", status: "範例", icon: "☁️", total_gb: 2048, used_gb: 205, avail_gb: 1843, percent_used: 10, state: "success" },
+                { id: "pixel4", name: "Pixel 4 緩衝空間 (範例)", type: "mobile", status: "範例", icon: "⚡", total_gb: 64, used_gb: 16, avail_gb: 48, percent_used: 25, state: "success" }
               ],
-              nas_sync: { running: false, total_nas_files: 48200, uploaded_to_gphotos: 48200, active_batch_count: 0, status_message: "GitHub Pages 線上模式（可點上方輸入帳號並下載 config.json，於 Windows/Mac 執行 server.py）", recent_logs: ["[Demo] Pixel 4 (USB ADB) 就緒，請點上方「👤 點此輸入 Google 帳號」設定您的帳號與檔案範圍"] },
-              logs: ["[Demo] 支援 Windows 10/11 與 macOS 雙平台。", "[Demo] 請點上方「👤 點此輸入 Google 帳號」或「⚙️ 帳號與檔案範圍」填入您的帳號與路徑。"]
+              nas_sync: { running: false, total_nas_files: 0, uploaded_to_gphotos: 0, active_batch_count: 0, status_message: "GitHub Pages 線上模式（本機執行 python server.py 可連接真實 Pixel 4）", recent_logs: ["[Demo] 請點上方「👤 點此輸入 Google 帳號」設定您的帳號與檔案範圍，並下載 config.json"] },
+              logs: ["[Demo] 目前為 GitHub Pages 靜態展示模式，未連接本機設備，所有即時數值顯示為 --。", "[Demo] 請點上方「👤 點此輸入 Google 帳號」填入帳號與 Windows/Mac 路徑並下載 config.json。"]
             };
           } else if (url.startsWith('/api/backup_status')) {
-            payload = { status: "idle", message: "展示模式：就緒", remaining: 0 };
+            payload = { status: "idle", message: "--", remaining: 0 };
           } else if (url.startsWith('/api/storage_matrix')) {
             payload = { matrix: [] };
           } else if (url.startsWith('/api/rclone/remotes')) {
-            payload = { remotes: ["gdrive_primary", "gdrive_secondary"] };
+            payload = { remotes: [] };
           } else if (url.startsWith('/api/relay/active')) {
             payload = { tasks: [] };
           }
@@ -949,15 +949,15 @@
             <div class="storage-bar-group">
               <div class="storage-header">
                 <div class="storage-title">儲存空間與中繼進度 (Windows / Mac / 外接硬碟)</div>
-                <div class="storage-detail" id="driveDetail">可用 419 GB / 總量 954 GB</div>
+                <div class="storage-detail" id="driveDetail">可用 -- / 總量 --</div>
               </div>
               <div class="segmented-bar">
-                <div class="bar-seg seg-apps" id="segDriveUsed" style="width: 57%;"></div>
-                <div class="bar-seg seg-free" id="segDriveFree" style="width: 43%;"></div>
+                <div class="bar-seg seg-apps" id="segDriveUsed" style="width: 0%;"></div>
+                <div class="bar-seg seg-free" id="segDriveFree" style="width: 100%;"></div>
               </div>
               <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">
-                <span>已釋放空間: <strong id="driveFreedText" style="color:var(--success);">+408 GB</strong></span>
-                <span>剩餘佔用率: <strong id="driveUsageText">57%</strong></span>
+                <span>已釋放空間: <strong id="driveFreedText" style="color:var(--success);">--</strong></span>
+                <span>剩餘佔用率: <strong id="driveUsageText">--%</strong></span>
               </div>
             </div>
 
@@ -999,7 +999,7 @@
                 <span>🌐</span> 全域空間矩陣 (Global Storage Matrix)
                 <span class="matrix-badge matrix-badge-normal" id="matrixTimestampHome">即時動態更新</span>
               </div>
-              <div class="matrix-subtitle">即時監控 Mac mini / MacBook / 行動端 (Pixel 5, iPhone, iPad) 與四大雲端空間 (Google 5TB/2TB, OneDrive, iCloud)</div>
+              <div class="matrix-subtitle">即時監控本機 (Windows / Mac)、行動端 (Pixel 4/5, iPhone) 與雲端空間 (Google Drive / OneDrive / iCloud)</div>
             </div>
             <div style="display:flex; gap:0.5rem;">
               <button class="btn btn-outline" style="padding:0.35rem 0.75rem; font-size:0.8rem;" onclick="fetchStatus()">🔄 刷新矩陣</button>
@@ -1016,22 +1016,22 @@
         <div class="metric-row">
           <div class="metric-card">
             <div class="metric-card-label">外接硬碟騰出進度</div>
-            <div class="metric-card-val" id="metricFreed" style="color:var(--success);">+408 GB</div>
-            <div class="metric-card-foot">容量佔用從 99% 大幅降至 57%</div>
+            <div class="metric-card-val" id="metricFreed" style="color:var(--success);">--</div>
+            <div class="metric-card-foot" id="metricFreedFoot">等待連線掃描統計</div>
           </div>
           <div class="metric-card">
             <div class="metric-card-label">全案遷移總完成率</div>
-            <div class="metric-card-val" id="metricPercent">44.7%</div>
-            <div class="metric-card-foot" id="metricFilesText">已處理 143,000+ / 320,066 檔案</div>
+            <div class="metric-card-val" id="metricPercent">--</div>
+            <div class="metric-card-foot" id="metricFilesText">已處理 -- / -- 檔案</div>
           </div>
           <div class="metric-card">
             <div class="metric-card-label">Pixel 手機上傳佇列</div>
-            <div class="metric-card-val" id="metricPixelQueue" style="color:var(--primary);">備份中</div>
-            <div class="metric-card-foot" id="metricPixelFree">可用 77 GB • 雙緩衝高速推入</div>
+            <div class="metric-card-val" id="metricPixelQueue" style="color:var(--primary);">--</div>
+            <div class="metric-card-foot" id="metricPixelFree">可用 -- • 雙緩衝中繼</div>
           </div>
           <div class="metric-card">
             <div class="metric-card-label">中繼通道狀態</div>
-            <div class="metric-card-val" id="metricRelayStatus" style="font-size:1.3rem; color:var(--success);">持續運轉中</div>
+            <div class="metric-card-val" id="metricRelayStatus" style="font-size:1.3rem; color:var(--text-muted);">--</div>
             <div class="metric-card-foot">0 扣額 • Google 帳號永久免付費</div>
           </div>
         </div>
