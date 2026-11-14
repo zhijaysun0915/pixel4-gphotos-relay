@@ -68,11 +68,11 @@
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="pill">Open Source · Python 3.9+ 零依賴 · macOS + iPhone ➔ Pixel 4</div>
+      <div class="pill">Open Source · Python 3.9+ 零依賴 · Windows + Mac + iPhone ➔ Pixel 4</div>
       <h1>📸 Pixel 4 無限 Google 相簿中繼系統</h1>
       <p class="lead">
-        將 <strong>iPhone 手機</strong>與 <strong>Mac 電腦</strong>的照片／影片自動分批中繼到 <strong>Pixel 4</strong>（或 Pixel 1–5），
-        透過 ADB 雙緩衝暫存與 UIAutomator 自動備份偵測，安全無痛享受 Google 相簿不計容量的無限空間備份。
+        支援 <strong>Windows 10/11</strong>、<strong>macOS</strong> 與 <strong>iPhone</strong> 的照片／影片與 <strong>Google Drive (`rclone`)</strong> 自動分批中繼到 <strong>Pixel 4</strong>（或 Pixel 1–5），
+        透過 ADB 雙緩衝暫存與 UIAutomator 自動備份偵測，安全無痛享受 Google 相簿無限空間備份。
       </p>
       <div class="cta-row">
         <a class="btn btn-primary" href="https://github.com/zhijaysun0915/pixel4-gphotos-relay" target="_blank">⭐ 前往 GitHub 專案下載</a>
@@ -156,13 +156,15 @@
     </section>
 
     <section class="card">
-      <h2>🚀 在 Mac 上 30 秒啟動本機控制台</h2>
+      <h2>🚀 在 Windows / Mac 上 30 秒啟動本機控制台</h2>
       <pre>git clone https://github.com/zhijaysun0915/pixel4-gphotos-relay.git
 cd pixel4-gphotos-relay
-# 將上方下載的 config.json 放入此資料夾（或啟動後直接在網頁修改）
-python3 app.py</pre>
+# 將上方下載的 config.json 放入此資料夾
+python server.py     # Windows
+python3 server.py    # macOS / Linux</pre>
       <p style="color:var(--muted); margin-bottom:0;">
-        執行後會自動開啟 <code>http://localhost:8765</code> 本機控制台，即可查看 Pixel 4 連線、掃描預覽並一鍵開始備份。
+        執行後開啟 <code>http://localhost:8989</code>（整合數據管家主控台），即可查看 Pixel 4 連線、Google Drive / Mac / Windows / iPhone 來源資料夾，並一鍵啟動中繼備份。
+        <br/>路徑範例：Windows 可填 <code>C:\Users\你的名字\Pictures\ToGooglePhotos</code> 或 <code>D:\Photos</code>；Mac 可填 <code>~/Pictures/ToGooglePhotos</code>。
       </p>
     </section>
   </div>

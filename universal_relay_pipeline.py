@@ -13,12 +13,28 @@ Supports:
 import os
 import sys
 import time
+import shutil
+import tempfile
 import argparse
 import subprocess
 import datetime
 import xml.etree.ElementTree as ET
 
-ADB = os.path.expanduser("~/.local/bin/adb")
+def find_adb():
+    candidates = [
+        shutil.which("adb"),
+        os.path.expanduser("~/.local/bin/adb"),
+        "/opt/homebrew/bin/adb",
+        "/usr/local/bin/adb",
+        r"C:\platform-tools\adb.exe",
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), "Android", "Sdk", "platform-tools", "adb.exe"),
+    ]
+    for c in candidates:
+        if c and os.path.isfile(c):
+            return c
+    return "adb.exe" if os.name == "nt" else "adb"
+
+ADB = find_adb()
 PIXEL_STAGING = "/sdcard/Download/PixelStaging"
 PIXEL_CAMERA = "/sdcard/DCIM/Camera"
 
@@ -159,8 +175,8 @@ class UniversalRelay:
             return ("complete", 0)
 
         # 2. UIAutomator inspect Google Photos status
-        self.adb_shell(f"uiautomator dump /sdcard/ui_status.xml >/dev/null 2>&1", timeout=15)
-        tmp_path = f"/tmp/ui_status_{self.device_serial}.xml"
+        self.adb_shell("uiautomator dump /sdcard/ui_status.xml >/dev/null 2>&1", timeout=15)
+        tmp_path = os.path.join(tempfile.gettempdir(), f"ui_status_{self.device_serial}.xml")
         self.run_adb(["pull", "/sdcard/ui_status.xml", tmp_path], timeout=10)
         if not os.path.exists(tmp_path):
             return ("backing_up", cam_count)
@@ -194,15 +210,17 @@ class UniversalRelay:
 
     def clean_source_junk(self):
         self.log(f"🧹 正在快速清理來源路徑垃圾檔 (.json, .thm, .aae, .DS_Store)...")
-        cmd = (
-            f"find '{self.source}' -type f \\( "
-            f"-iname '*.json' -o -iname '.DS_Store' -o -iname 'Thumbs.db*' -o "
-            f"-iname '*.aae' -o -iname '*.thm' -o -iname '*.ctg' -o "
-            f"-iname '*.info' -o -iname '*.moff' -o -iname '*.modd' -o -name '.*' "
-            f"\\) -delete 2>/dev/null"
-        )
-        subprocess.run(cmd, shell=True)
-        self.log(f"✨ 垃圾檔清理完畢！")
+        removed = 0
+        for root, _, files in os.walk(self.source):
+            for fname in files:
+                ext = os.path.splitext(fname)[1].lower()
+                if ext in JUNK_EXTS or fname.startswith(".") or fname.lower().startswith("thumbs.db"):
+                    try:
+                        os.remove(os.path.join(root, fname))
+                        removed += 1
+                    except OSError:
+                        pass
+        self.log(f"✨ 垃圾檔清理完畢！（已移除 {removed} 個）")
 
     def run(self):
         self.log(f"==================================================")

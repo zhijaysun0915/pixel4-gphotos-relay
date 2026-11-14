@@ -20,6 +20,7 @@ import socketserver
 import json
 import subprocess
 import os
+import sys
 import re
 import glob
 import time
@@ -35,10 +36,35 @@ from datetime import datetime
 PORTS = [8989, 8998]
 HOST = "0.0.0.0"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ADB = os.path.expanduser("~/.local/bin/adb")
-RCLONE = os.path.expanduser("~/.local/bin/rclone")
+
+def find_binary(name, extra_paths):
+    found = shutil.which(name)
+    if found:
+        return found
+    for p in extra_paths:
+        if p and os.path.isfile(p):
+            return p
+    return f"{name}.exe" if os.name == "nt" else name
+
+ADB = find_binary("adb", [
+    os.path.expanduser("~/.local/bin/adb"),
+    "/opt/homebrew/bin/adb",
+    "/usr/local/bin/adb",
+    r"C:\platform-tools\adb.exe",
+    os.path.join(os.environ.get("LOCALAPPDATA", ""), "Android", "Sdk", "platform-tools", "adb.exe"),
+])
+RCLONE = find_binary("rclone", [
+    os.path.expanduser("~/.local/bin/rclone"),
+    "/opt/homebrew/bin/rclone",
+    "/usr/local/bin/rclone",
+    r"C:\rclone\rclone.exe",
+])
 LOG_FILE = os.path.join(BASE_DIR, "relay.log")
-RCLONE_CONF = os.path.expanduser("~/.config/rclone/rclone.conf")
+RCLONE_CONF = (
+    os.path.join(os.environ.get("APPDATA", ""), "rclone", "rclone.conf")
+    if os.name == "nt"
+    else os.path.expanduser("~/.config/rclone/rclone.conf")
+)
 DB_PATH = os.path.join(BASE_DIR, "disk_cache.db")
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 EXAMPLE_CONFIG_PATH = os.path.join(BASE_DIR, "config.example.json")
@@ -174,6 +200,32 @@ def get_refreshed_gphotos_token():
 
 def get_mounted_volumes():
     volumes = []
+    if os.name == "nt":
+        import string
+        for letter in string.ascii_uppercase:
+            drive = f"{letter}:\\"
+            if os.path.exists(drive):
+                try:
+                    usage = shutil.disk_usage(drive)
+                    total, used, free = usage.total, usage.used, usage.free
+                    volumes.append({
+                        "name": f"本機磁碟 ({letter}:)",
+                        "raw_name": f"{letter}:",
+                        "path": drive,
+                        "is_nas": False,
+                        "nas_host": None,
+                        "total": total,
+                        "total_formatted": format_size(total),
+                        "used": used,
+                        "used_formatted": format_size(used),
+                        "free": free,
+                        "free_formatted": format_size(free),
+                        "percent": round((used / total) * 100, 1) if total > 0 else 0,
+                    })
+                except Exception:
+                    pass
+        return volumes
+
     net_mounts = {}
     try:
         res = subprocess.run(["mount"], capture_output=True, text=True, check=False)
@@ -925,10 +977,16 @@ class UnifiedDashboardHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({"error": f"檔案不存在: {filepath}"}, status=404)
                     return
                 try:
-                    if action == "reveal":
-                        subprocess.Popen(["open", "-R", filepath])
+                    if os.name == "nt":
+                        if action == "reveal":
+                            subprocess.Popen(["explorer", "/select,", os.path.normpath(filepath)])
+                        else:
+                            os.startfile(os.path.normpath(filepath))
+                    elif sys.platform == "darwin":
+                        subprocess.Popen(["open", "-R", filepath] if action == "reveal" else ["open", filepath])
                     else:
-                        subprocess.Popen(["open", filepath])
+                        target = os.path.dirname(filepath) if action == "reveal" else filepath
+                        subprocess.Popen(["xdg-open", target])
                     self.send_json({"success": True})
                 except Exception as e:
                     self.send_json({"error": str(e)}, status=500)
@@ -1386,7 +1444,7 @@ class UnifiedDashboardHandler(http.server.SimpleHTTPRequestHandler):
         task_log = os.path.expanduser(f"~/relay_task_{task_id}.log")
 
         cmd = [
-            "python3",
+            sys.executable,
             os.path.join(BASE_DIR, "universal_relay_pipeline.py"),
             "--source", source,
             "--device", device,
@@ -1424,7 +1482,12 @@ class UnifiedDashboardHandler(http.server.SimpleHTTPRequestHandler):
 
     def stop_relay_task(self, pid):
         try:
-            subprocess.run(f"kill -9 {int(pid)} 2>/dev/null", shell=True)
+            pid_int = int(pid)
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/F", "/PID", str(pid_int)], capture_output=True)
+            else:
+                import signal
+                os.kill(pid_int, signal.SIGKILL)
             return {"success": True, "msg": f"任務 (PID: {pid}) 已成功終止！"}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -1432,33 +1495,48 @@ class UnifiedDashboardHandler(http.server.SimpleHTTPRequestHandler):
     def get_active_relays(self):
         tasks = []
         try:
-            res = subprocess.run("ps -ef | grep -E 'universal_relay_pipeline|pixel5_auto_relay' | grep -v grep", shell=True, capture_output=True, text=True)
-            for line in res.stdout.strip().splitlines():
-                parts = line.split()
-                if len(parts) >= 8:
-                    pid = parts[1]
-                    cmd_str = " ".join(parts[7:])
-                    tasks.append({
-                        "pid": pid,
-                        "cmd": cmd_str,
-                        "is_legacy": "pixel5_auto_relay" in cmd_str
-                    })
+            if os.name == "nt":
+                res = subprocess.run(
+                    ["wmic", "process", "where", "name like '%python%'", "get", "ProcessId,CommandLine"],
+                    capture_output=True, text=True
+                )
+                for line in res.stdout.splitlines():
+                    if "universal_relay_pipeline" in line:
+                        parts = line.strip().split()
+                        if parts and parts[-1].isdigit():
+                            tasks.append({"pid": parts[-1], "cmd": line.strip(), "is_legacy": False})
+            else:
+                res = subprocess.run("ps -ef | grep -E 'universal_relay_pipeline|pixel5_auto_relay' | grep -v grep", shell=True, capture_output=True, text=True)
+                for line in res.stdout.strip().splitlines():
+                    parts = line.split()
+                    if len(parts) >= 8:
+                        pid = parts[1]
+                        cmd_str = " ".join(parts[7:])
+                        tasks.append({
+                            "pid": pid,
+                            "cmd": cmd_str,
+                            "is_legacy": "pixel5_auto_relay" in cmd_str
+                        })
         except Exception:
             pass
         return {"tasks": tasks}
 
     def clean_junk_files(self, target_path):
+        target_path = os.path.expanduser(target_path) if target_path else ""
         if not target_path or not os.path.exists(target_path):
             return {"success": False, "error": "路徑不存在"}
-        cmd = (
-            f"find '{target_path}' -type f \\( "
-            f"-iname '*.json' -o -iname '.DS_Store' -o -iname 'Thumbs.db*' -o "
-            f"-iname '*.aae' -o -iname '*.thm' -o -iname '*.ctg' -o "
-            f"-iname '*.info' -o -iname '*.moff' -o -iname '*.modd' -o -name '.*' "
-            f"\\) -delete 2>/dev/null"
-        )
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        return {"success": res.returncode == 0, "msg": "清理無效附屬檔與隱藏垃圾檔完成！"}
+        junk_exts = {".json", ".thm", ".ctg", ".info", ".moff", ".modd", ".aae"}
+        removed = 0
+        for root, _, files in os.walk(target_path):
+            for fname in files:
+                ext = os.path.splitext(fname)[1].lower()
+                if ext in junk_exts or fname.startswith(".") or fname.lower().startswith("thumbs.db"):
+                    try:
+                        os.remove(os.path.join(root, fname))
+                        removed += 1
+                    except OSError:
+                        pass
+        return {"success": True, "msg": f"清理無效附屬檔與隱藏垃圾檔完成！（已移除 {removed} 個）"}
 
     def control_legacy_relay(self, action):
         if action == "restart":

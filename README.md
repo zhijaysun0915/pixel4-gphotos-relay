@@ -1,11 +1,12 @@
-# 📸 Google Drive & 相簿數據管家 | Pixel 4 無限 Google 相簿中繼系統 (Mac + iPhone + Google Drive)
+# 📸 Google Drive & 相簿數據管家 | Pixel 4 無限 Google 相簿中繼系統 (Windows + Mac + iPhone + Google Drive)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-green.svg)](https://www.python.org/)
+[![Platform: Windows | macOS](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-0284c7.svg)](#%EF%B8%8F-%E4%BA%8B%E5%89%8D%E6%BA%96%E5%82%99)
 [![GitHub Pages](https://img.shields.io/badge/Web%20Config%20Builder-GitHub%20Pages-38bdf8.svg)](https://zhijaysun0915.github.io/pixel4-gphotos-relay/)
 
-這是一套專為 **Google Pixel 4**（相容 Pixel 1–5）打造的 **Google Drive / Google 相簿無限空間中繼與磁碟分析網頁控制台**。  
-整合 **iPhone 手機**、**Mac 本機/外接硬碟** 與 **Google Drive (`rclone`)** 多來源資料，透過本機網頁介面（預設 `http://localhost:8989`）與雙緩衝 ADB 引擎，將照片與影片自動分批推送至 Pixel 4 完成 **0-Byte 無限空間備份**。
+這是一套支援 **Windows 10/11** 與 **macOS**、專為 **Google Pixel 4**（相容 Pixel 1–5）打造的 **Google Drive / Google 相簿無限空間中繼與磁碟分析網頁控制台**。  
+整合 **iPhone 手機**、**Windows / Mac 電腦與外接硬碟** 以及 **Google Drive (`rclone`)** 多來源資料，透過本機網頁介面（預設 `http://localhost:8989`）與雙緩衝 ADB 引擎，將照片與影片自動分批推送至 Pixel 4 完成 **0-Byte 無限空間備份**。
 
 > 🌐 **GitHub Pages 公開網頁（線上架構說明與 `config.json` 產生器）**：  
 > https://zhijaysun0915.github.io/pixel4-gphotos-relay/
@@ -61,7 +62,22 @@
 2. **開啟 USB 偵錯**：設定 ➔ 系統 ➔ 開發人員選項 ➔ 開啟 **USB 偵錯**，並建議開啟 **不鎖定螢幕（充電時不休眠）**。
 3. **Google 相簿設定**：登入目標 Google 帳號 ➔ 備份畫質設為 **節省空間 (Storage saver)**（Pixel 2–5 享無限容量；Pixel 1 享原始畫質無限容量），並將 Google 相簿 App 保持開啟。
 
-### 2. Mac 電腦端安裝工具
+### 2. 電腦端安裝工具（Windows & Mac）
+
+#### 🪟 Windows 10 / 11
+1. **Python 3.9+**：從 [python.org](https://www.python.org/downloads/) 或 Microsoft Store 安裝（安裝時記得勾選 `Add Python to PATH`）。
+2. **ADB (Android Platform Tools)**：在 PowerShell / CMD 執行：
+   ```powershell
+   winget install Google.PlatformTools
+   ```
+   *(或手動下載 [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools) 解壓到 `C:\platform-tools`，程式會自動偵測 `C:\platform-tools\adb.exe`。)*
+3. **rclone（選用，Google Drive 雲端同步）**：
+   ```powershell
+   winget install Rclone.Rclone
+   rclone config
+   ```
+
+#### 🍎 macOS
 - **Python 3.9+**：macOS 內建或使用 Homebrew 安裝（本專案核心伺服器使用 Python 標準函式庫，無需額外 `pip install`）。
 - **ADB**：
   ```bash
@@ -74,11 +90,12 @@
   rclone config
   ```
 
-### 3. iPhone 照片匯入 Mac 的推薦方式
-將 iPhone 照片集中到設定的 `~/Pictures/iPhone_Import`：
-- **USB 有線匯入（最穩）**：iPhone 連接 Mac ➔ 開啟 macOS「影像擷取 (Image Capture)」➔ 匯入到 `~/Pictures/iPhone_Import`。
-- **無線自動傳檔**：iPhone 安裝 **PhotoSync** 或 **LocalSend**，自動傳輸至 `~/Pictures/iPhone_Import`。
-- **iCloud / Mac 照片圖庫**：在 Mac「照片」App 選取照片 ➔ `檔案` ➔ `輸出未修改的原始檔` 到指定資料夾。
+### 3. iPhone 照片如何匯入電腦中繼？
+將 iPhone 照片集中到設定的匯入資料夾（Windows 例如 `C:\Users\你的名字\Pictures\iPhone_Import`，Mac 例如 `~/Pictures/iPhone_Import`）：
+- **Windows USB 匯入**：iPhone 插上電腦 ➔ 開啟檔案總管「Apple iPhone ➔ Internal Storage ➔ DCIM」直接複製，或使用 Windows 內建「相片 App」匯入至 `C:\Users\你的名字\Pictures\iPhone_Import`。
+- **Mac USB 匯入（最穩）**：iPhone 連接 Mac ➔ 開啟 macOS「影像擷取 (Image Capture)」➔ 匯入到 `~/Pictures/iPhone_Import`。
+- **雙平台無線自動傳檔**：iPhone 安裝 **PhotoSync** 或 **LocalSend**，自動傳輸至 Windows/Mac 的匯入資料夾。
+- **iCloud / Mac 照片圖庫**：Windows 可裝 **iCloud for Windows** 同步照片資料夾；Mac 可從「照片」App 選取照片 ➔ `檔案` ➔ `輸出未修改的原始檔`。
 
 ---
 
