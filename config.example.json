@@ -1,8 +1,14 @@
 {
   "account": {
-    "google_account_label": "your.account@gmail.com",
+    "primary_google_account": "your-primary@gmail.com",
+    "secondary_google_account": "your-secondary@gmail.com",
+    "work_cloud_label": "",
     "device_serial": "auto",
-    "device_model_hint": "Pixel 4"
+    "device_model_hint": "Pixel 4",
+    "rclone_primary_remote": "gdrive_primary",
+    "rclone_secondary_remote": "gdrive_secondary",
+    "nas_host": "",
+    "nas_share_path": ""
   },
   "sources": [
     {
@@ -18,9 +24,15 @@
       "enabled": true
     },
     {
-      "name": "外接硬碟 / NAS 掛載 (External Drive)",
+      "name": "Google Drive 掛載 / 下載區",
+      "type": "google_drive",
+      "path": "~/GoogleDrive_Relay",
+      "enabled": true
+    },
+    {
+      "name": "外接硬碟 / NAS (External Drive)",
       "type": "external_drive",
-      "path": "/Volumes/MyDrive/Photos",
+      "path": "/Volumes",
       "enabled": false
     }
   ],
@@ -30,7 +42,6 @@
     "include_photos": true,
     "include_videos": true,
     "include_raw": false,
-    "custom_extensions": [],
     "exclude_patterns": [
       ".DS_Store",
       "Thumbs.db",
@@ -38,18 +49,9 @@
       ".Trash",
       "Thumbnails"
     ],
-    "min_file_size_kb": 1,
-    "max_file_size_mb": 0
-  },
-  "relay": {
     "batch_size_gb": 15.0,
     "min_free_gb": 12.0,
     "delete_source_after_push": false,
-    "auto_clean_camera_after_backup": true,
-    "clean_source_junk_files": false,
-    "staging_dir": "/sdcard/Download/PixelStaging",
-    "camera_dir": "/sdcard/DCIM/Camera",
-    "adb_path": "auto",
-    "poll_interval_sec": 15
+    "default_browse_path": "~"
   }
 }
